@@ -1,0 +1,44 @@
+{
+  "name": "focus-content",
+  "displayName": "Focus Content",
+  "description": "Let coding agents direct visual attention to editor content.",
+  "version": "0.0.1",
+  "publisher": "kade-powell",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Visualization",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "agent",
+    "focus",
+    "highlight",
+    "visualization"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "check": "npm run check:types && npm run lint && npm run test:unit",
+    "check:types": "tsc --noEmit",
+    "compile": "npm run check:types && node esbuild.mjs",
+    "lint": "eslint .",
+    "package": "npm run check && node esbuild.mjs --production",
+    "test:unit": "node --test --import tsx test/unit/**/*.test.ts",
+    "vscode:prepublish": "npm run package",
+    "watch": "node esbuild.mjs --watch"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/node": "latest",
+    "@types/vscode": "^1.95.0",
+    "esbuild": "latest",
+    "eslint": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest"
+  }
+}
+
