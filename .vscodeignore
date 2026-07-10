@@ -1,11 +1,14 @@
 .design/
+.gitignore
 .github/
 .vscode/
+.vscode-test.mjs
 node_modules/
+out/
 src/
 test/
 *.map
 eslint.config.mjs
 esbuild.mjs
+package-lock.json
 tsconfig.json
-

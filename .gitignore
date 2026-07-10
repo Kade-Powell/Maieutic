@@ -1,6 +1,11 @@
 dist/
 node_modules/
+out/
+.vscode-test/
 *.vsix
 .DS_Store
 .design/
 
+!.vscode/
+!.vscode/launch.json
+!.vscode/tasks.json

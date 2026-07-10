@@ -1,44 +1,192 @@
 {
-  "name": "focus-content",
-  "displayName": "Focus Content",
-  "description": "Let coding agents direct visual attention to editor content.",
+  "name": "maieutic",
+  "displayName": "Maieutic",
+  "description": "Read-only Socratic codebase teaching with agent-controlled visual focus.",
   "version": "0.0.1",
   "publisher": "kade-powell",
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kade-Powell/vscode-maieutic.git"
+  },
   "engines": {
-    "vscode": "^1.95.0"
+    "vscode": "^1.129.0"
   },
   "categories": [
     "Visualization",
+    "Education",
     "Machine Learning"
   ],
   "keywords": [
     "agent",
     "focus",
     "highlight",
+    "mentor",
+    "socratic",
+    "teaching",
     "visualization"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguageModelTool:maieutic_focus_content",
+    "onLanguageModelTool:maieutic_point_at_content",
+    "onLanguageModelTool:maieutic_clear_focus_content"
+  ],
+  "contributes": {
+    "chatAgents": [
+      {
+        "path": "./agents/socraites.agent.md"
+      }
+    ],
+    "commands": [
+      {
+        "command": "maieutic.focusAroundCursor",
+        "title": "Maieutic: Focus Around Cursor",
+        "icon": "$(selection)"
+      },
+      {
+        "command": "maieutic.pointAtCursor",
+        "title": "Maieutic: Point at Cursor",
+        "icon": "$(target)"
+      },
+      {
+        "command": "maieutic.clearPointer",
+        "title": "Maieutic: Clear Pointer",
+        "icon": "$(close)"
+      },
+      {
+        "command": "maieutic.demoAtCursor",
+        "title": "Maieutic: Demo at Cursor",
+        "icon": "$(target)"
+      },
+      {
+        "command": "maieutic.clear",
+        "title": "Maieutic: Clear",
+        "icon": "$(close-all)"
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "maieutic_focus_content",
+        "displayName": "Maieutic: Focus Content",
+        "userDescription": "Open and visually focus a section of a workspace file.",
+        "modelDescription": "Opens a workspace file, scrolls the complete requested line range into view, and visually focuses that section. Use this before pointAtContent when explaining or directing attention to editor content. A new focus replaces the prior focus and clears its pointer. This tool does not return or edit file content and does not replace the explanation in your response.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "focusContent",
+        "icon": "$(selection)",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Workspace-relative file path. In a multi-root workspace, prefix an ambiguous path with the workspace folder name."
+            },
+            "startLine": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "First focused line, using 1-based coordinates."
+            },
+            "endLine": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Last focused line, inclusive. Defaults to startLine."
+            }
+          },
+          "required": ["path", "startLine"]
+        }
+      },
+      {
+        "name": "maieutic_point_at_content",
+        "displayName": "Maieutic: Point at Content",
+        "userDescription": "Move or clear the visual pointer within the current focused section.",
+        "modelDescription": "Moves the visual pointer to one exact token or span inside the current focused section without reopening the file, changing the focused block, or scrolling. Use action 'point' while discussing a specific detail and action 'clear' when the block should remain focused without a precise pointer. Call focusContent first. Prefer pointerText when it is unambiguous; otherwise use explicit 1-based line and column coordinates.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "pointAtContent",
+        "icon": "$(target)",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": ["point", "clear"],
+              "description": "Whether to move or clear the precise pointer while preserving the focused block."
+            },
+            "pointerText": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Exact text to point at within the focused lines."
+            },
+            "pointerOccurrence": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-based occurrence of pointerText within the focused lines. Defaults to 1."
+            },
+            "pointerLine": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Exact pointer line, using 1-based document coordinates."
+            },
+            "pointerStartColumn": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Exact pointer start column, using 1-based coordinates."
+            },
+            "pointerEndColumn": {
+              "type": "integer",
+              "minimum": 2,
+              "description": "Exact pointer end column, exclusive and 1-based."
+            }
+          },
+          "required": ["action"]
+        }
+      },
+      {
+        "name": "maieutic_clear_focus_content",
+        "displayName": "Maieutic: Clear Focus",
+        "userDescription": "Remove the focused section and precise pointer.",
+        "modelDescription": "Clears the complete visual presentation, including both the focused section and any precise pointer. Use this when visual focus is no longer useful or before ending a walkthrough.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "clearFocusContent",
+        "icon": "$(close-all)",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {}
+        }
+      }
+    ]
+  },
   "scripts": {
     "check": "npm run check:types && npm run lint && npm run test:unit",
     "check:types": "tsc --noEmit",
+    "compile:test": "tsc --outDir out --noEmit false --sourceMap",
     "compile": "npm run check:types && node esbuild.mjs",
     "lint": "eslint .",
     "package": "npm run check && node esbuild.mjs --production",
+    "test": "npm run package && npm run compile:test && vscode-test",
     "test:unit": "node --test --import tsx test/unit/**/*.test.ts",
     "vscode:prepublish": "npm run package",
     "watch": "node esbuild.mjs --watch"
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@types/mocha": "latest",
     "@types/node": "latest",
     "@types/vscode": "^1.95.0",
+    "@vscode/test-cli": "0.0.11",
+    "@vscode/test-electron": "latest",
     "esbuild": "latest",
     "eslint": "latest",
     "tsx": "latest",
     "typescript": "latest",
     "typescript-eslint": "latest"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.5"
   }
 }
-
