@@ -7,6 +7,7 @@ const commands = [
   "maieutic.clearPointer",
   "maieutic.demoAtCursor",
   "maieutic.clear",
+  "maieutic.installLocalSpeechInput",
   "maieutic.configureOpenAiTts",
   "maieutic.clearOpenAiApiKey",
   "maieutic.previewOpenAiVoice",

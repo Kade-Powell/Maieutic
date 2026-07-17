@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 
 interface Manifest {
   extensionKind?: string[];
+  extensionPack?: string[];
   dependencies?: Record<string, string>;
   contributes?: {
     commands?: Array<{ command?: string }>;
@@ -28,6 +29,7 @@ describe("OpenAI TTS manifest", () => {
     assert.deepEqual(manifest.extensionKind, ["ui"]);
     assert.deepEqual(manifest.dependencies, { openai: "6.48.0" });
     for (const command of [
+      "maieutic.installLocalSpeechInput",
       "maieutic.configureOpenAiTts",
       "maieutic.clearOpenAiApiKey",
       "maieutic.previewOpenAiVoice",
@@ -35,6 +37,12 @@ describe("OpenAI TTS manifest", () => {
     ]) {
       assert.ok(commands?.includes(command), `${command} is not contributed`);
     }
+  });
+
+  it("declares local speech input as an independent companion", async () => {
+    const manifest = JSON.parse(await readFile("package.json", "utf8")) as Manifest;
+
+    assert.deepEqual(manifest.extensionPack, ["ms-vscode.vscode-speech"]);
   });
 
   it("keeps the speak tool disabled until setup and limits narration length", async () => {

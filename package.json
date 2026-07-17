@@ -1,7 +1,7 @@
 {
   "name": "maieutic",
   "displayName": "Maieutic",
-  "description": "Read-only Socratic codebase teaching with visual focus and optional OpenAI voice narration.",
+  "description": "Read-only Socratic codebase teaching with visual focus, local speech input, and optional OpenAI narration.",
   "version": "0.0.1",
   "publisher": "kade-powell",
   "license": "MIT",
@@ -24,12 +24,14 @@
   ],
   "keywords": [
     "agent",
+    "dictation",
     "focus",
     "highlight",
     "mentor",
     "openai",
     "socratic",
     "speech",
+    "speech-to-text",
     "teaching",
     "text-to-speech",
     "visualization"
@@ -37,6 +39,9 @@
   "main": "./dist/extension.js",
   "extensionKind": [
     "ui"
+  ],
+  "extensionPack": [
+    "ms-vscode.vscode-speech"
   ],
   "activationEvents": [
     "onLanguageModelTool:maieutic_focus_content",
@@ -78,6 +83,11 @@
         "command": "maieutic.clear",
         "title": "Maieutic: Clear",
         "icon": "$(close-all)"
+      },
+      {
+        "command": "maieutic.installLocalSpeechInput",
+        "title": "Maieutic: Install Local Speech Input",
+        "icon": "$(mic)"
       },
       {
         "command": "maieutic.configureOpenAiTts",

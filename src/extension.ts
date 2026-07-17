@@ -11,6 +11,8 @@ import {
 } from "./speech-controller.js";
 import type { SpeakInput } from "./speech-model.js";
 
+const INSTALL_LOCAL_SPEECH_COMMAND = "maieutic.installLocalSpeechInput";
+const LOCAL_SPEECH_EXTENSION_ID = "ms-vscode.vscode-speech";
 const FOCUS_TOOL_NAME = "maieutic_focus_content";
 const POINT_TOOL_NAME = "maieutic_point_at_content";
 const CLEAR_TOOL_NAME = "maieutic_clear_focus_content";
@@ -22,6 +24,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     controller,
     speech,
+    registerCommand(INSTALL_LOCAL_SPEECH_COMMAND, () => installLocalSpeechInput()),
     registerCommand(CONFIGURE_TTS_COMMAND, () => speech.configure()),
     registerCommand(CLEAR_TTS_KEY_COMMAND, () => speech.clearApiKey()),
     registerCommand(PREVIEW_TTS_COMMAND, () => speech.preview()),
@@ -100,6 +103,46 @@ function registerCommand(command: string, callback: () => void | Thenable<void>)
       void vscode.window.showErrorMessage(toErrorMessage(error));
     }
   });
+}
+
+async function installLocalSpeechInput(): Promise<void> {
+  if (vscode.extensions.getExtension(LOCAL_SPEECH_EXTENSION_ID) !== undefined) {
+    await vscode.window.showInformationMessage(
+      "VS Code Speech is already installed. Use the microphone in Chat or run 'Chat: Start Voice Chat'.",
+    );
+    return;
+  }
+
+  const install = "Install";
+  const selection = await vscode.window.showInformationMessage(
+    "Install Microsoft's VS Code Speech extension for local speech-to-text?",
+    {
+      modal: true,
+      detail: [
+        "VS Code Speech owns microphone access and processes voice recordings locally on your machine.",
+        "It may download language support from the Visual Studio Marketplace.",
+        "Maieutic does not receive or store microphone audio.",
+      ].join("\n\n"),
+    },
+    install,
+  );
+  if (selection !== install) {
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: "Installing VS Code Speech",
+    },
+    async () => vscode.commands.executeCommand(
+      "workbench.extensions.installExtension",
+      LOCAL_SPEECH_EXTENSION_ID,
+    ),
+  );
+  await vscode.window.showInformationMessage(
+    "VS Code Speech is installed. Use the microphone in Chat or run 'Chat: Start Voice Chat'.",
+  );
 }
 
 function toolResult(message: string): vscode.LanguageModelToolResult {

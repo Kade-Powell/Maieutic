@@ -8,3 +8,4 @@ All notable changes to Maieutic are documented here.
 - Added agent-controlled block focus, precise pointer, and clear-focus tools.
 - Added theme-responsive visual styling and manual demonstration commands.
 - Added optional OpenAI voice narration with secure key storage, local playback, and cancellation.
+- Added VS Code Speech as the independently removable local speech-to-text companion.

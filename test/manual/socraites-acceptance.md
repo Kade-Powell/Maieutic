@@ -5,10 +5,12 @@ Run this matrix before a Marketplace release and whenever the prompt, tools, or 
 ## Setup
 
 1. Package and install the current Maieutic VSIX in a clean VS Code profile.
-2. Open Chat Customizations diagnostics and confirm both contributed profiles load without errors.
-3. Confirm only SocrAItes appears in the agent picker; SocrAItes Discovery must remain hidden.
-4. Open a representative repository containing instructions, docs, implementation code, and tests.
-5. Run the matrix with at least two available model families and record material differences.
+2. Run **Maieutic: Install Local Speech Input** and confirm it installs `ms-vscode.vscode-speech`. Separately confirm a Marketplace Maieutic install resolves the extension-pack companion.
+3. Open Chat Customizations diagnostics and confirm both contributed profiles load without errors.
+4. Confirm only SocrAItes appears in the agent picker; SocrAItes Discovery must remain hidden.
+5. Confirm `accessibility.voice.autoSynthesize` is disabled before enabling Maieutic OpenAI narration.
+6. Open a representative repository containing instructions, docs, implementation code, and tests.
+7. Run the matrix with at least two available model families and record material differences.
 
 Run the speech scenarios once with TTS disabled and once after **Maieutic: Configure OpenAI TTS**. Use a low-quota test API project and confirm the preview clearly identifies the voice as AI-generated.
 
@@ -94,6 +96,18 @@ Expected: synthesis or playback stops without retrying, Chat remains usable, tex
 
 ### Local dictation
 
-With VS Code Speech installed, dictate a SocrAItes question and submit it.
+With the bundled VS Code Speech companion installed, select the Chat microphone, dictate a SocrAItes question, and submit it. Repeat after disconnecting from the network once the selected language support is installed.
 
-Expected: speech recognition remains local to the VS Code Speech extension; Maieutic sends only generated narration and configured voice settings to OpenAI and plays the response locally.
+Expected: recognition and the microphone UI are owned by VS Code Speech, recognition continues locally, and Maieutic receives the submitted text without receiving microphone audio.
+
+### Speech feature independence
+
+Disable VS Code Speech and confirm visual focus plus OpenAI narration still work. Then re-enable VS Code Speech, disable Maieutic OpenAI TTS, and dictate another prompt.
+
+Expected: each capability works without the other speech capability.
+
+### Single narrator
+
+With VS Code Speech and Maieutic OpenAI TTS enabled, submit a dictated prompt while `accessibility.voice.autoSynthesize` is disabled.
+
+Expected: Maieutic sends only generated narration and configured voice settings to OpenAI, and exactly one AI-generated OpenAI voice plays the response.

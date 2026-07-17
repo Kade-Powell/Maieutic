@@ -1,6 +1,6 @@
 # Maieutic
 
-Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, a codebase mentor agent with visual tools that guide attention through code and documentation without making changes, plus optional OpenAI voice narration.
+Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, visual tools that guide attention without making changes, local speech input through VS Code Speech, and optional OpenAI voice narration.
 
 ## SocrAItes
 
@@ -49,7 +49,15 @@ Local playback uses the operating system's WAV player:
 
 ### Local Speech Input
 
-Speech-to-text is intentionally separate from Maieutic's OpenAI narration. Install Microsoft's **VS Code Speech** extension (`ms-vscode.vscode-speech`) for local speech recognition and use it to dictate Chat messages. Maieutic does not send microphone audio to OpenAI.
+Maieutic includes Microsoft's [VS Code Speech](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-speech) as an extension-pack companion. A Marketplace installation installs it alongside Maieutic; a GitHub VSIX installation exposes the command below. VS Code Speech supplies the native Chat microphone and voice commands. Recordings are processed locally by VS Code Speech; Maieutic never requests microphone access or receives the audio.
+
+- After installing a GitHub VSIX, run **Maieutic: Install Local Speech Input** if the companion was not installed automatically.
+- Select the microphone in Chat or run **Chat: Start Voice Chat** to dictate a SocrAItes prompt.
+- Hold `Cmd+I` on macOS or `Ctrl+I` on Windows and Linux for walky-talky mode.
+- Configure recognition language with `accessibility.voice.speechLanguage`.
+- Leave `accessibility.voice.autoSynthesize` disabled while Maieutic OpenAI TTS is enabled to avoid hearing both narration systems.
+
+Speech-to-text, OpenAI narration, and visual focus remain independent. If VS Code Speech cannot be installed with an offline VSIX installation, install the companion later from the Marketplace; the rest of Maieutic continues to work.
 
 ## Try the Visual Layer
 
@@ -65,14 +73,15 @@ Speech-to-text is intentionally separate from Maieutic's OpenAI narration. Insta
 
 ## Try SocrAItes
 
-1. Open Chat in the Extension Development Host and select **SocrAItes**.
-2. Ask: `Teach me how resolvePointer works and how its validation protects the visual focus boundary.`
+1. Open Chat and select **SocrAItes**.
+2. Type or dictate: `Teach me how resolvePointer works and how its validation protects the visual focus boundary.`
 3. Answer SocrAItes' question, then ask it to move to the next relevant detail.
 4. Confirm that it points and explains without editing files or running commands.
+5. With OpenAI TTS enabled, confirm each visual change completes before its matching narration begins.
 
 Only workspace-relative paths are accepted by the visual tools. In a multi-root workspace, prefix an ambiguous path with the workspace folder name.
 
-The visual tools remain usable when text-to-speech is disabled or unconfigured.
+The visual tools remain usable when either speech capability is disabled or unconfigured.
 
 ## Development
 
