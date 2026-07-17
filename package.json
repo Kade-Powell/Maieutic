@@ -233,6 +233,7 @@
           "type": "boolean",
           "default": false,
           "scope": "application",
+          "ignoreSync": true,
           "description": "Enable the OpenAI-backed Maieutic speak tool. Use the configuration command to store an API key securely."
         },
         "maieutic.tts.voice": {

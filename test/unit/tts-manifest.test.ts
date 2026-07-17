@@ -16,7 +16,10 @@ interface Manifest {
       };
     }>;
     configuration?: {
-      properties?: Record<string, { default?: unknown; minimum?: number; maximum?: number }>;
+      properties?: Record<
+        string,
+        { default?: unknown; ignoreSync?: boolean; minimum?: number; maximum?: number }
+      >;
     };
   };
 }
@@ -59,6 +62,7 @@ describe("OpenAI TTS manifest", () => {
     const properties = manifest.contributes?.configuration?.properties;
 
     assert.equal(properties?.["maieutic.tts.enabled"]?.default, false);
+    assert.equal(properties?.["maieutic.tts.enabled"]?.ignoreSync, true);
     assert.equal(properties?.["maieutic.tts.voice"]?.default, "marin");
     assert.equal(properties?.["maieutic.tts.speed"]?.default, 1);
     assert.equal(properties?.["maieutic.tts.speed"]?.minimum, 0.25);
