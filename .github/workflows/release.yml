@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify release version
+        shell: bash
+        run: |
+          package_name="$(node -p "require('./package.json').name")"
+          package_version="$(node -p "require('./package.json').version")"
+          expected_tag="v${package_version}"
+
+          if [[ "${GITHUB_REF_NAME}" != "${expected_tag}" ]]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} must match package version ${expected_tag}."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/main; then
+            echo "::error::Release tag must point to a commit on main."
+            exit 1
+          fi
+
+          echo "PACKAGE_VERSION=${package_version}" >> "${GITHUB_ENV}"
+          echo "VSIX_PATH=${package_name}-${package_version}.vsix" >> "${GITHUB_ENV}"
+
+      - name: Verify Marketplace credentials
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [[ -z "${VSCE_PAT}" ]]; then
+            echo "::error::Add the VSCE_PAT repository secret before releasing."
+            exit 1
+          fi
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Test extension
+        run: xvfb-run -a npm test
+
+      - name: Package VSIX
+        run: npx --no-install vsce package --out "${VSIX_PATH}"
+
+      - name: Preserve release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maieutic-${{ env.PACKAGE_VERSION }}
+          path: ${{ env.VSIX_PATH }}
+          if-no-files-found: error
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx --no-install vsce publish --skip-duplicate --packagePath "${VSIX_PATH}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${GITHUB_REF_NAME}" "${VSIX_PATH}"
+          --verify-tag
+          --generate-notes
+          --title "Maieutic ${PACKAGE_VERSION}"

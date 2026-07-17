@@ -51,3 +51,36 @@ Only workspace-relative paths are accepted by the visual tools. In a multi-root 
 - `npm run check` runs type checking, linting, and unit tests.
 - `npm test` also packages the extension and runs integration tests in an Extension Development Host.
 - `npm run package` produces the bundled extension entry point in `dist/`.
+- `npm run package:vsix` creates an installable `.vsix` package.
+
+## Publishing
+
+Pull requests and pushes to `main` run the complete test suite in `.github/workflows/ci.yml`. Releases are driven by version tags through `.github/workflows/release.yml`.
+
+### One-time setup
+
+1. Create the `kade-powell` publisher in the [Visual Studio Marketplace publisher portal](https://marketplace.visualstudio.com/manage). If you use another publisher ID, update `publisher` in `package.json` first.
+2. Create a Marketplace publishing token following the [VS Code publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token).
+3. Add the token to this GitHub repository as an Actions secret named `VSCE_PAT`.
+
+> Azure DevOps global PATs retire on December 1, 2026. Before then, migrate the Marketplace step to the guide's Microsoft Entra ID secure publishing flow.
+
+### Release
+
+The package is already set to `0.0.1` for the initial release. For later releases, update both package files together and add the release notes to `CHANGELOG.md`:
+
+```sh
+npm version 0.0.2 --no-git-tag-version
+```
+
+Then:
+
+1. Commit the release changes on `main`.
+2. Create and push the matching tag:
+
+   ```sh
+   git tag v0.0.2
+   git push origin main v0.0.2
+   ```
+
+The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, publishes that exact artifact to the VS Code Marketplace, and attaches it to a GitHub Release.

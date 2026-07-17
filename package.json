@@ -8,7 +8,11 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kade-Powell/vscode-maieutic.git"
+    "url": "https://github.com/Kade-Powell/Maieutic.git"
+  },
+  "homepage": "https://github.com/Kade-Powell/Maieutic#readme",
+  "bugs": {
+    "url": "https://github.com/Kade-Powell/Maieutic/issues"
   },
   "engines": {
     "vscode": "^1.129.0"
@@ -167,6 +171,8 @@
     "compile": "npm run check:types && node esbuild.mjs",
     "lint": "eslint .",
     "package": "npm run check && node esbuild.mjs --production",
+    "package:vsix": "vsce package",
+    "publish:marketplace": "vsce publish",
     "test": "npm run package && npm run compile:test && vscode-test",
     "test:unit": "node --test --import tsx test/unit/**/*.test.ts",
     "vscode:prepublish": "npm run package",
@@ -179,6 +185,7 @@
     "@types/vscode": "^1.95.0",
     "@vscode/test-cli": "0.0.11",
     "@vscode/test-electron": "latest",
+    "@vscode/vsce": "3.9.2",
     "esbuild": "latest",
     "eslint": "latest",
     "tsx": "latest",

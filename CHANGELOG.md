@@ -1,0 +1,9 @@
+# Change Log
+
+All notable changes to Maieutic are documented here.
+
+## 0.0.1 - 2026-07-17
+
+- Added the read-only SocrAItes teaching agent profile.
+- Added agent-controlled block focus, precise pointer, and clear-focus tools.
+- Added theme-responsive visual styling and manual demonstration commands.
