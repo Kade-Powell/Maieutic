@@ -15,6 +15,7 @@ const parentTools = [
   "maieutic_focus_content",
   "maieutic_point_at_content",
   "maieutic_clear_focus_content",
+  "maieutic_speak",
 ];
 
 const discoveryTools = [
@@ -79,7 +80,9 @@ describe("SocrAItes agent profile", () => {
     assert.match(profile.body, /Documentation Distillation/);
     assert.match(profile.body, /Make at most one visual state change per response/);
     assert.match(profile.body, /\*\*Human decision:\*\*/);
-    assert.match(profile.body, /Assume the final response may be read aloud/);
+    assert.match(profile.body, /OpenAI narration is optional and independent/);
+    assert.match(profile.body, /Never call speech and presentation tools in parallel/);
+    assert.match(profile.body, /Speech must never be delegated/);
     assert.ok(profile.body.length < 30_000, "agent prompt exceeds VS Code's limit");
   });
 });

@@ -1,6 +1,15 @@
 import * as vscode from "vscode";
 import { FocusController } from "./focus-controller.js";
 import type { FocusContentInput, PointAtContentInput } from "./model.js";
+import {
+  CLEAR_TTS_KEY_COMMAND,
+  CONFIGURE_TTS_COMMAND,
+  PREVIEW_TTS_COMMAND,
+  SPEAK_TOOL_NAME,
+  SpeechController,
+  STOP_SPEAKING_COMMAND,
+} from "./speech-controller.js";
+import type { SpeakInput } from "./speech-model.js";
 
 const FOCUS_TOOL_NAME = "maieutic_focus_content";
 const POINT_TOOL_NAME = "maieutic_point_at_content";
@@ -8,9 +17,15 @@ const CLEAR_TOOL_NAME = "maieutic_clear_focus_content";
 
 export function activate(context: vscode.ExtensionContext): void {
   const controller = new FocusController();
+  const speech = new SpeechController(context);
 
   context.subscriptions.push(
     controller,
+    speech,
+    registerCommand(CONFIGURE_TTS_COMMAND, () => speech.configure()),
+    registerCommand(CLEAR_TTS_KEY_COMMAND, () => speech.clearApiKey()),
+    registerCommand(PREVIEW_TTS_COMMAND, () => speech.preview()),
+    registerCommand(STOP_SPEAKING_COMMAND, () => speech.stop()),
     registerCommand("maieutic.focusAroundCursor", () => controller.focusAroundCursor()),
     registerCommand("maieutic.pointAtCursor", () => controller.pointAtCursor()),
     registerCommand("maieutic.clearPointer", () => controller.clearPointer()),
@@ -62,15 +77,25 @@ export function activate(context: vscode.ExtensionContext): void {
         };
       },
     }),
+    vscode.lm.registerTool<SpeakInput>(SPEAK_TOOL_NAME, {
+      async invoke(options, token) {
+        return toolResult(await speech.invoke(options.input, token));
+      },
+      prepareInvocation() {
+        return {
+          invocationMessage: "Generating and playing OpenAI speech",
+        };
+      },
+    }),
   );
 }
 
 export function deactivate(): void {}
 
-function registerCommand(command: string, callback: () => void): vscode.Disposable {
-  return vscode.commands.registerCommand(command, () => {
+function registerCommand(command: string, callback: () => void | Thenable<void>): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async () => {
     try {
-      callback();
+      await callback();
     } catch (error: unknown) {
       void vscode.window.showErrorMessage(toErrorMessage(error));
     }

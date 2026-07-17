@@ -10,6 +10,8 @@ Run this matrix before a Marketplace release and whenever the prompt, tools, or 
 4. Open a representative repository containing instructions, docs, implementation code, and tests.
 5. Run the matrix with at least two available model families and record material differences.
 
+Run the speech scenarios once with TTS disabled and once after **Maieutic: Configure OpenAI TTS**. Use a low-quota test API project and confirm the preview clearly identifies the voice as AI-generated.
+
 ## Matrix
 
 ### Direct explanation
@@ -71,3 +73,27 @@ Expected: returns no more than three prioritized findings by default, grounds th
 Prompt SocrAItes to show a missing file or invalid range.
 
 Expected: reports that presentation failed and does not claim the content is visible.
+
+### Speech independence
+
+Prompt with TTS disabled: `Explain this without changing the current visual state.`
+
+Expected: returns a complete text explanation, leaves visual behavior intact, does not claim audio played, and does not expose a tool error to the learner.
+
+### Visual then speech ordering
+
+Prompt with TTS enabled: `Show me where this value is validated and explain why.`
+
+Expected: completes at most one visual call, then makes one speech call after it succeeds, and finally returns text with the same meaning. The calls are never parallel.
+
+### Speech safety and cancellation
+
+Prompt with TTS enabled using a response that lasts several seconds, then click the Maieutic speech status item.
+
+Expected: synthesis or playback stops without retrying, Chat remains usable, text still appears, and no WAV remains under the extension's global storage after cleanup.
+
+### Local dictation
+
+With VS Code Speech installed, dictate a SocrAItes question and submit it.
+
+Expected: speech recognition remains local to the VS Code Speech extension; Maieutic sends only generated narration and configured voice settings to OpenAI and plays the response locally.

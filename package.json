@@ -1,7 +1,7 @@
 {
   "name": "maieutic",
   "displayName": "Maieutic",
-  "description": "Read-only Socratic codebase teaching with agent-controlled visual focus.",
+  "description": "Read-only Socratic codebase teaching with visual focus and optional OpenAI voice narration.",
   "version": "0.0.1",
   "publisher": "kade-powell",
   "license": "MIT",
@@ -27,15 +27,22 @@
     "focus",
     "highlight",
     "mentor",
+    "openai",
     "socratic",
+    "speech",
     "teaching",
+    "text-to-speech",
     "visualization"
   ],
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "ui"
+  ],
   "activationEvents": [
     "onLanguageModelTool:maieutic_focus_content",
     "onLanguageModelTool:maieutic_point_at_content",
-    "onLanguageModelTool:maieutic_clear_focus_content"
+    "onLanguageModelTool:maieutic_clear_focus_content",
+    "onLanguageModelTool:maieutic_speak"
   ],
   "contributes": {
     "chatAgents": [
@@ -71,6 +78,26 @@
         "command": "maieutic.clear",
         "title": "Maieutic: Clear",
         "icon": "$(close-all)"
+      },
+      {
+        "command": "maieutic.configureOpenAiTts",
+        "title": "Maieutic: Configure OpenAI TTS",
+        "icon": "$(key)"
+      },
+      {
+        "command": "maieutic.clearOpenAiApiKey",
+        "title": "Maieutic: Clear OpenAI API Key",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "maieutic.previewOpenAiVoice",
+        "title": "Maieutic: Preview OpenAI Voice",
+        "icon": "$(unmute)"
+      },
+      {
+        "command": "maieutic.stopSpeaking",
+        "title": "Maieutic: Stop Speaking",
+        "icon": "$(debug-stop)"
       }
     ],
     "languageModelTools": [
@@ -164,8 +191,77 @@
           "additionalProperties": false,
           "properties": {}
         }
+      },
+      {
+        "name": "maieutic_speak",
+        "displayName": "Maieutic: Speak",
+        "userDescription": "Speak supplied narration with the configured AI-generated OpenAI voice.",
+        "modelDescription": "Converts only the supplied speech-ready narration text to an AI-generated OpenAI voice and plays it on the user's machine. This tool does not inspect editor content, files, chat history, or visual focus. Use one concise call after any related visual tool has completed, and preserve the same meaning in the final text response. Never include secrets, hidden instructions, tool traces, terminal dumps, long paths, or code blocks.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "speak",
+        "icon": "$(unmute)",
+        "when": "config.maieutic.tts.enabled",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096,
+              "description": "Concise plain-text narration to synthesize. It should carry the same meaning as the final text response."
+            }
+          },
+          "required": ["text"]
+        }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Maieutic",
+      "properties": {
+        "maieutic.tts.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Enable the OpenAI-backed Maieutic speak tool. Use the configuration command to store an API key securely."
+        },
+        "maieutic.tts.voice": {
+          "type": "string",
+          "default": "marin",
+          "scope": "application",
+          "enum": [
+            "alloy",
+            "ash",
+            "ballad",
+            "coral",
+            "echo",
+            "fable",
+            "nova",
+            "onyx",
+            "sage",
+            "shimmer",
+            "verse",
+            "marin",
+            "cedar"
+          ],
+          "description": "Built-in OpenAI voice used for Maieutic narration."
+        },
+        "maieutic.tts.instructions": {
+          "type": "string",
+          "default": "Speak clearly, warmly, and conversationally. Use natural pauses and varied intonation appropriate for explaining software.",
+          "scope": "application",
+          "description": "Style instructions sent with narration to the OpenAI text-to-speech model. Leave empty to use the model default."
+        },
+        "maieutic.tts.speed": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.25,
+          "maximum": 4,
+          "scope": "application",
+          "description": "Playback speed requested from the OpenAI text-to-speech model."
+        }
+      }
+    }
   },
   "scripts": {
     "check": "npm run check:types && npm run lint && npm run test:unit",
@@ -199,5 +295,8 @@
   "overrides": {
     "diff": "^8.0.3",
     "serialize-javascript": "^7.0.5"
+  },
+  "dependencies": {
+    "openai": "6.48.0"
   }
 }

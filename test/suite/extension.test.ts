@@ -7,16 +7,22 @@ const commands = [
   "maieutic.clearPointer",
   "maieutic.demoAtCursor",
   "maieutic.clear",
+  "maieutic.configureOpenAiTts",
+  "maieutic.clearOpenAiApiKey",
+  "maieutic.previewOpenAiVoice",
+  "maieutic.stopSpeaking",
 ];
 
 const tools = [
   "maieutic_focus_content",
   "maieutic_point_at_content",
   "maieutic_clear_focus_content",
+  "maieutic_speak",
 ];
 
 suite("Maieutic extension", () => {
   suiteSetup(async () => {
+    await vscode.workspace.getConfiguration("maieutic.tts").update("enabled", true, vscode.ConfigurationTarget.Global);
     const document = await vscode.workspace.openTextDocument({
       content: ["function example() {", "  return 42;", "}"].join("\n"),
       language: "typescript",
@@ -27,6 +33,7 @@ suite("Maieutic extension", () => {
 
   suiteTeardown(async () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await vscode.workspace.getConfiguration("maieutic.tts").update("enabled", false, vscode.ConfigurationTarget.Global);
   });
 
   test("registers all manual commands and language model tools", async () => {
@@ -59,5 +66,9 @@ suite("Maieutic extension", () => {
   test("keeps the combined demo command available", async () => {
     await vscode.commands.executeCommand("maieutic.demoAtCursor");
     await vscode.commands.executeCommand("maieutic.clear");
+  });
+
+  test("allows stop when no speech is active", async () => {
+    await vscode.commands.executeCommand("maieutic.stopSpeaking");
   });
 });

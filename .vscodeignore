@@ -7,7 +7,7 @@ node_modules/
 out/
 src/
 test/
-*.map
+**/*.map
 eslint.config.mjs
 esbuild.mjs
 package-lock.json

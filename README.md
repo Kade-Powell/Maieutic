@@ -1,6 +1,6 @@
 # Maieutic
 
-Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, a codebase mentor agent with visual tools that guide attention through code and documentation without making changes.
+Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, a codebase mentor agent with visual tools that guide attention through code and documentation without making changes, plus optional OpenAI voice narration.
 
 ## SocrAItes
 
@@ -25,7 +25,31 @@ SocrAItes and other compatible VS Code agents can use three independent tools:
 
 SocrAItes makes at most one visual state change per response, explains one idea, and waits before moving the pointer. This keeps the presentation aligned with the conversation and future speech playback.
 
-The presentation uses standard VS Code theme colors and never selects or edits the document. Text-to-speech and speech-to-text remain separate follow-on features.
+The presentation uses standard VS Code theme colors and never selects or edits the document. Visual focus, text-to-speech, and speech-to-text remain independent capabilities.
+
+## OpenAI Voice Narration
+
+Maieutic contributes an independent `#speak` tool. When enabled, it sends only the narration supplied to that tool and your configured voice settings to OpenAI's `gpt-4o-mini-tts` model, plays the returned WAV locally, and deletes the temporary audio file. It does not automatically send files, editor content, chat history, tool output, or visual state.
+
+OpenAI API usage may incur charges. All playback is AI-generated. Your API key is stored in VS Code Secret Storage, not in settings or logs.
+
+1. Run **Maieutic: Configure OpenAI TTS** and review the disclosure.
+2. Enter an OpenAI API key.
+3. Run **Maieutic: Preview OpenAI Voice**.
+4. Select **SocrAItes** and ask for an explanation. SocrAItes establishes any visual state first, then speaks the same explanation it returns as text.
+5. Click the Maieutic status-bar item or run **Maieutic: Stop Speaking** to cancel synthesis or playback.
+
+The default voice is `marin`. Configure `maieutic.tts.voice`, `maieutic.tts.instructions`, and `maieutic.tts.speed` in Settings. Starting new narration replaces active narration. Run **Maieutic: Clear OpenAI API Key** to remove the stored key and disable speech.
+
+Local playback uses the operating system's WAV player:
+
+- macOS: `afplay`
+- Windows: PowerShell `System.Media.SoundPlayer`
+- Linux: `aplay`
+
+### Local Speech Input
+
+Speech-to-text is intentionally separate from Maieutic's OpenAI narration. Install Microsoft's **VS Code Speech** extension (`ms-vscode.vscode-speech`) for local speech recognition and use it to dictate Chat messages. Maieutic does not send microphone audio to OpenAI.
 
 ## Try the Visual Layer
 
@@ -47,6 +71,8 @@ The presentation uses standard VS Code theme colors and never selects or edits t
 4. Confirm that it points and explains without editing files or running commands.
 
 Only workspace-relative paths are accepted by the visual tools. In a multi-root workspace, prefix an ambiguous path with the workspace folder name.
+
+The visual tools remain usable when text-to-speech is disabled or unconfigured.
 
 ## Development
 
