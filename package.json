@@ -41,6 +41,9 @@
     "chatAgents": [
       {
         "path": "./agents/socraites.agent.md"
+      },
+      {
+        "path": "./agents/socraites-discovery.agent.md"
       }
     ],
     "commands": [
@@ -190,7 +193,8 @@
     "eslint": "latest",
     "tsx": "latest",
     "typescript": "latest",
-    "typescript-eslint": "latest"
+    "typescript-eslint": "latest",
+    "yaml": "2.9.0"
   },
   "overrides": {
     "diff": "^8.0.3",

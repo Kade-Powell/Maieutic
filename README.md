@@ -7,11 +7,13 @@ Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **So
 Select **SocrAItes** from the Chat agent picker. The bundled profile:
 
 - can read and search the workspace, inspect problems, ask questions, and consult primary documentation;
-- cannot edit files, run commands or tests, create tasks, or delegate to subagents;
+- cannot edit files, run commands or tests, or create tasks;
 - uses Socratic questions and a progressive hint ladder without withholding basic facts;
 - distills repository documentation into mental models, invariants, boundaries, tradeoffs, and verification evidence;
 - points to verified code and documentation instead of generating paste-ready implementations; and
 - treats workspace `AGENTS.md` and local teaching guidance as domain context without relaxing its read-only boundary.
+
+For broad multi-file discovery, SocrAItes can delegate one bounded investigation to a hidden read-only worker. The worker can search and report evidence but cannot edit, execute, interact with the learner, or control Maieutic's visual tools.
 
 ## Visual Tools
 
@@ -52,6 +54,7 @@ Only workspace-relative paths are accepted by the visual tools. In a multi-root 
 - `npm test` also packages the extension and runs integration tests in an Extension Development Host.
 - `npm run package` produces the bundled extension entry point in `dist/`.
 - `npm run package:vsix` creates an installable `.vsix` package.
+- `test/manual/socraites-acceptance.md` defines the cross-model prompt and tool-boundary release checks.
 
 ## Publishing
 
