@@ -93,9 +93,11 @@ The visual tools remain usable when either speech capability is disabled or unco
 
 ## Publishing
 
-Pull requests and pushes to `main` run the complete test suite in `.github/workflows/ci.yml`. Releases are driven by version tags through `.github/workflows/release.yml`.
+Pull requests and pushes to `main` run the complete test suite in `.github/workflows/ci.yml`. Version tags always audit, test, package, and publish the VSIX to a GitHub Release through `.github/workflows/release.yml`. If Marketplace credentials are configured, that same VSIX is also published there.
 
-### One-time setup
+No repository secret is required for GitHub Releases.
+
+### Optional Marketplace Setup
 
 1. Create the `kade-powell` publisher in the [Visual Studio Marketplace publisher portal](https://marketplace.visualstudio.com/manage). If you use another publisher ID, update `publisher` in `package.json` first.
 2. Create a Marketplace publishing token following the [VS Code publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token).
@@ -121,4 +123,4 @@ Then:
    git push origin main v0.0.2
    ```
 
-The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, publishes that exact artifact to the VS Code Marketplace, and attaches it to a GitHub Release.
+The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, and attaches that exact artifact to an idempotent GitHub Release. Marketplace publication is skipped cleanly when `VSCE_PAT` is absent.

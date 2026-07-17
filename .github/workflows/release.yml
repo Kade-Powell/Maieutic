@@ -54,15 +54,6 @@ jobs:
           echo "PACKAGE_VERSION=${package_version}" >> "${GITHUB_ENV}"
           echo "VSIX_PATH=${package_name}-${package_version}.vsix" >> "${GITHUB_ENV}"
 
-      - name: Verify Marketplace credentials
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          if [[ -z "${VSCE_PAT}" ]]; then
-            echo "::error::Add the VSCE_PAT repository secret before releasing."
-            exit 1
-          fi
-
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -79,16 +70,38 @@ jobs:
           path: ${{ env.VSIX_PATH }}
           if-no-files-found: error
 
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "${VSIX_PATH}" \
+              --clobber \
+              --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release create "${GITHUB_REF_NAME}" "${VSIX_PATH}" \
+              --verify-tag \
+              --generate-notes \
+              --title "Maieutic ${PACKAGE_VERSION}" \
+              --repo "${GITHUB_REPOSITORY}"
+          fi
+
+      - name: Detect Marketplace credentials
+        id: marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        shell: bash
+        run: |
+          if [[ -n "${VSCE_PAT}" ]]; then
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice::VSCE_PAT is not configured; the GitHub Release is complete and Marketplace publication was skipped."
+          fi
+
       - name: Publish to VS Code Marketplace
+        if: steps.marketplace.outputs.enabled == 'true'
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: npx --no-install vsce publish --skip-duplicate --packagePath "${VSIX_PATH}"
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "${GITHUB_REF_NAME}" "${VSIX_PATH}"
-          --verify-tag
-          --generate-notes
-          --title "Maieutic ${PACKAGE_VERSION}"
