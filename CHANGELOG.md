@@ -2,6 +2,10 @@
 
 All notable changes to Maieutic are documented here.
 
+## 0.0.3 - 2026-07-18
+
+- Replaced the retiring Marketplace PAT flow with secretless Microsoft Entra workload identity federation from GitHub Actions.
+
 ## 0.0.2 - 2026-07-17
 
 - Corrected the Visual Studio Marketplace publisher ID to `TenGallonTechnology`.

@@ -93,24 +93,25 @@ The visual tools remain usable when either speech capability is disabled or unco
 
 ## Publishing
 
-Pull requests and pushes to `main` run the complete test suite in `.github/workflows/ci.yml`. Version tags always audit, test, package, and publish the VSIX to a GitHub Release through `.github/workflows/release.yml`. If Marketplace credentials are configured, that same VSIX is also published there.
+Pull requests and pushes to `main` run the complete test suite in `.github/workflows/ci.yml`. Version tags always audit, test, package, and publish the VSIX to a GitHub Release through `.github/workflows/release.yml`, then publish that same VSIX to the Marketplace.
 
-No repository secret is required for GitHub Releases.
+No publishing secret is stored in GitHub. Marketplace publishing uses Microsoft Entra workload identity federation to exchange a repository-scoped GitHub OIDC token for a short-lived access token.
 
-### Optional Marketplace Setup
+### Marketplace Automation
 
-1. Manage the `TenGallonTechnology` publisher in the [Visual Studio Marketplace publisher portal](https://marketplace.visualstudio.com/manage). Its public display name is Ten Gallon Technology.
-2. Create a Marketplace publishing token following the [VS Code publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token).
-3. Add the token to this GitHub repository as an Actions secret named `VSCE_PAT`.
+1. The `Maieutic GitHub Marketplace Publisher` app registration trusts only GitHub's immutable owner/repository IDs and the `marketplace` environment.
+2. The GitHub `marketplace` environment stores the non-secret `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` variables and allows only `v*` tags.
+3. The Entra identity's Marketplace profile is a Contributor on the `TenGallonTechnology` publisher.
+4. A dedicated Marketplace job downloads the tested artifact, requests `id-token: write`, signs in with a commit-pinned `azure/login`, verifies publisher access, and invokes an exact `vsce` version with `--azure-credential`.
 
-> Azure DevOps global PATs retire on December 1, 2026. Before then, migrate the Marketplace step to the guide's Microsoft Entra ID secure publishing flow.
+The build and test job cannot request OIDC tokens. The publishing identity has no password, client secret, PAT, or Azure subscription role. The GitHub Release is created before Marketplace publication so the tested VSIX remains available if the Marketplace is temporarily unavailable.
 
 ### Release
 
 For each release, update both package files together and add the release notes to `CHANGELOG.md`:
 
 ```sh
-npm version 0.0.3 --no-git-tag-version
+npm version 0.0.4 --no-git-tag-version
 ```
 
 Then:
@@ -119,8 +120,8 @@ Then:
 2. Create and push the matching tag:
 
    ```sh
-   git tag v0.0.3
-   git push origin main v0.0.3
+   git tag v0.0.4
+   git push origin main v0.0.4
    ```
 
-The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, and attaches that exact artifact to an idempotent GitHub Release. Marketplace publication is skipped cleanly when `VSCE_PAT` is absent.
+The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, attaches that exact artifact to an idempotent GitHub Release, and publishes it to the Marketplace with a short-lived Entra token.
