@@ -2,6 +2,10 @@
 
 All notable changes to Maieutic are documented here.
 
+## 0.0.2 - 2026-07-17
+
+- Corrected the Visual Studio Marketplace publisher ID to `TenGallonTechnology`.
+
 ## 0.0.1 - 2026-07-17
 
 - Added the read-only SocrAItes teaching agent profile.

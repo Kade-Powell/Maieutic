@@ -2,8 +2,8 @@
   "name": "maieutic",
   "displayName": "Maieutic",
   "description": "Read-only Socratic codebase teaching with visual focus, local speech input, and optional OpenAI narration.",
-  "version": "0.0.1",
-  "publisher": "kade-powell",
+  "version": "0.0.2",
+  "publisher": "TenGallonTechnology",
   "license": "MIT",
   "private": true,
   "repository": {

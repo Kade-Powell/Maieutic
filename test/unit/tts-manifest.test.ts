@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 interface Manifest {
   extensionKind?: string[];
   extensionPack?: string[];
+  publisher?: string;
   dependencies?: Record<string, string>;
   contributes?: {
     commands?: Array<{ command?: string }>;
@@ -30,6 +31,7 @@ describe("OpenAI TTS manifest", () => {
     const commands = manifest.contributes?.commands?.map(({ command }) => command);
 
     assert.deepEqual(manifest.extensionKind, ["ui"]);
+    assert.equal(manifest.publisher, "TenGallonTechnology");
     assert.deepEqual(manifest.dependencies, { openai: "6.48.0" });
     for (const command of [
       "maieutic.installLocalSpeechInput",

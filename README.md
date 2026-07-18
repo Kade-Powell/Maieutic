@@ -99,7 +99,7 @@ No repository secret is required for GitHub Releases.
 
 ### Optional Marketplace Setup
 
-1. Create the `kade-powell` publisher in the [Visual Studio Marketplace publisher portal](https://marketplace.visualstudio.com/manage). If you use another publisher ID, update `publisher` in `package.json` first.
+1. Manage the `TenGallonTechnology` publisher in the [Visual Studio Marketplace publisher portal](https://marketplace.visualstudio.com/manage). Its public display name is Ten Gallon Technology.
 2. Create a Marketplace publishing token following the [VS Code publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token).
 3. Add the token to this GitHub repository as an Actions secret named `VSCE_PAT`.
 
@@ -107,10 +107,10 @@ No repository secret is required for GitHub Releases.
 
 ### Release
 
-The package is already set to `0.0.1` for the initial release. For later releases, update both package files together and add the release notes to `CHANGELOG.md`:
+For each release, update both package files together and add the release notes to `CHANGELOG.md`:
 
 ```sh
-npm version 0.0.2 --no-git-tag-version
+npm version 0.0.3 --no-git-tag-version
 ```
 
 Then:
@@ -119,8 +119,8 @@ Then:
 2. Create and push the matching tag:
 
    ```sh
-   git tag v0.0.2
-   git push origin main v0.0.2
+   git tag v0.0.3
+   git push origin main v0.0.3
    ```
 
 The release workflow verifies that the tag exactly matches the package version and points to a commit on `main`. It then reruns all tests, audits dependencies, packages one VSIX, and attaches that exact artifact to an idempotent GitHub Release. Marketplace publication is skipped cleanly when `VSCE_PAT` is absent.
