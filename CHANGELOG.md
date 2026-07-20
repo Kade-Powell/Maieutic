@@ -4,6 +4,11 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+## 0.0.5 - 2026-07-20
+
+- Fixed the selectable SocrAItes profile to enable Maieutic tools by their VS Code prompt reference names so visual focus is actually available in typed conversations.
+- Strengthened the custom-agent turn contract and removed repeated approval prompts from read-only focus, pointer, and clear actions.
+
 ## 0.0.4 - 2026-07-20
 
 - Fixed the Chat call control so it is visible, opens a fresh `@socraites` session immediately, and reports each call phase while listening continues in the background.

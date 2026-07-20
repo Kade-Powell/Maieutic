@@ -12,10 +12,10 @@ const parentTools = [
   "search",
   "web",
   "vscode/askQuestions",
-  "maieutic_focus_content",
-  "maieutic_point_at_content",
-  "maieutic_clear_focus_content",
-  "maieutic_speak",
+  "focusContent",
+  "pointAtContent",
+  "clearFocusContent",
+  "speak",
 ];
 
 const discoveryTools = [
@@ -78,6 +78,24 @@ describe("SocrAItes agent profile", () => {
     assert.deepEqual(profile.frontmatter.agents, ["SocrAItes Discovery"]);
   });
 
+  it("enables every contributed extension tool by its prompt reference name", async () => {
+    const profile = await readAgentProfile("agents/socraites.agent.md");
+    const manifest = JSON.parse(await readFile("package.json", "utf8")) as {
+      contributes?: {
+        languageModelTools?: Array<{ toolReferenceName?: string; canBeReferencedInPrompt?: boolean }>;
+      };
+    };
+    const contributedReferences = new Set(
+      manifest.contributes?.languageModelTools?.flatMap((tool) =>
+        tool.canBeReferencedInPrompt === true && tool.toolReferenceName ? [tool.toolReferenceName] : [],
+      ),
+    );
+    const profileExtensionTools = profile.frontmatter.tools?.filter((tool) => contributedReferences.has(tool));
+
+    assert.deepEqual(profileExtensionTools, [...contributedReferences]);
+    assert.ok(profileExtensionTools?.every((tool) => !tool.includes("maieutic_")));
+  });
+
   it("keeps discovery hidden and strictly read-only", async () => {
     const profile = await readAgentProfile("agents/socraites-discovery.agent.md");
 
@@ -94,6 +112,8 @@ describe("SocrAItes agent profile", () => {
     const profile = await readAgentProfile("agents/socraites.agent.md");
 
     assert.match(profile.body, /Remain read-only for the entire session/);
+    assert.match(profile.body, /An end-to-end request changes the scope of discovery, not the amount presented/);
+    assert.match(profile.body, /#tool:focusContent/);
     assert.match(profile.body, /Never provide paste-ready implementation code/);
     assert.match(profile.body, /Socratic teaching should produce thought/);
     assert.match(profile.body, /Documentation Distillation/);

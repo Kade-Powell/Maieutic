@@ -77,10 +77,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       prepareInvocation(options) {
         return {
           invocationMessage: `Focusing ${options.input.path}`,
-          confirmationMessages: {
-            title: "Focus editor content",
-            message: `Allow the agent to open and visually focus \`${options.input.path}\`? This will not edit the file.`,
-          },
         };
       },
     }),
@@ -92,12 +88,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         const clearing = options.input.action === "clear";
         return {
           invocationMessage: clearing ? "Clearing the precise pointer" : "Moving the precise pointer",
-          confirmationMessages: {
-            title: clearing ? "Clear content pointer" : "Point at editor content",
-            message: clearing
-              ? "Allow the agent to clear the precise pointer while preserving the focused section?"
-              : "Allow the agent to move the precise pointer within the focused section? This will not edit or scroll the file.",
-          },
         };
       },
     }),
@@ -109,10 +99,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       prepareInvocation() {
         return {
           invocationMessage: "Clearing focused content",
-          confirmationMessages: {
-            title: "Clear focused content",
-            message: "Allow the agent to clear the complete visual presentation?",
-          },
         };
       },
     }),

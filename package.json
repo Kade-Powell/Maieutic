@@ -3,7 +3,7 @@
   "displayName": "Maieutic",
   "description": "Read-only Socratic codebase teaching with visual focus and a natural local or OpenAI voice conversation.",
   "icon": "media/icon.png",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "TenGallonTechnology",
   "license": "MIT",
   "private": true,
