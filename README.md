@@ -37,7 +37,7 @@ The presentation uses standard VS Code theme colors and never selects or edits t
 
 ## Voice Conversation
 
-Open VS Code Chat and click the Maieutic microphone once. Maieutic then repeats this learner-gated loop:
+Open VS Code Chat and click the Maieutic call handset once. The handset is separate from VS Code's microphone, which controls dictation rather than a SocrAItes call. Maieutic then repeats this learner-gated loop:
 
 1. Listen for one learner turn and stop after a short pause.
 2. Transcribe the recording locally.
@@ -46,7 +46,7 @@ Open VS Code Chat and click the Maieutic microphone once. Maieutic then repeats 
 5. Speak that explanation while keeping echo-cancelled local listening active.
 6. Resume ordinary listening automatically when playback finishes, or stop immediately and submit the learner's interruption as the next turn.
 
-Every call uses SocrAItes regardless of the agent currently selected in Chat. The microphone becomes a stop control while the conversation is active. It keeps listening until you speak or stop it; click the control again to stop capture, transcription, narration, or the active SocrAItes response. Speaking while SocrAItes is talking interrupts playback, preserves the start of the learner's utterance, transcribes it locally, and continues the same call. Maieutic uses native voice-processing echo cancellation when the selected input and output route supports it, then safely retries with a conservative acoustic guard when macOS cannot combine those devices. The Chat session remains open and each SocrAItes response still ends at its teach-back or confirmation gate; voice mode does not let the agent batch later lesson steps.
+Every call uses SocrAItes regardless of the agent currently selected in Chat. The same handset toggles the conversation off while it is active. It keeps listening until you speak or stop it; click the control again to stop capture, transcription, narration, or the active SocrAItes response. Speaking while SocrAItes is talking interrupts playback, preserves the start of the learner's utterance, transcribes it locally, and continues the same call. Maieutic uses native voice-processing echo cancellation when the selected input and output route supports it, then safely retries with a conservative acoustic guard when macOS cannot combine those devices. The Chat session remains open and each SocrAItes response still ends at its teach-back or confirmation gate; voice mode does not let the agent batch later lesson steps.
 
 Local recognition currently supports macOS. On first use, Maieutic asks before downloading the official Whisper `base.en` model, about 142 MB. The model is verified and stored in VS Code's private extension data. Each microphone recording is stored with private permissions and deleted immediately after local transcription. The recognized text is then submitted to the selected VS Code Chat model like a typed prompt.
 

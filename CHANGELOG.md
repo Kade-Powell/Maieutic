@@ -4,6 +4,10 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+## 0.0.6 - 2026-07-20
+
+- Replaced the ambiguous Chat microphone with one stable SocrAItes call handset that toggles both start and stop.
+
 ## 0.0.5 - 2026-07-20
 
 - Fixed the selectable SocrAItes profile to enable Maieutic tools by their VS Code prompt reference names so visual focus is actually available in typed conversations.

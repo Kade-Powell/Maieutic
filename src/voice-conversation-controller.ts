@@ -10,6 +10,7 @@ import {
 
 export const START_VOICE_CONVERSATION_COMMAND = "maieutic.startVoiceConversation";
 export const STOP_VOICE_CONVERSATION_COMMAND = "maieutic.stopVoiceConversation";
+export const TOGGLE_VOICE_CONVERSATION_COMMAND = "maieutic.toggleVoiceConversation";
 export const VOICE_CONVERSATION_ACTIVE_CONTEXT = "maieutic.voiceConversationActive";
 
 type ConversationPhase = "idle" | "starting" | LocalWhisperPhase | "waiting";
@@ -60,12 +61,23 @@ export class VoiceConversationController implements vscode.Disposable {
     try {
       await vscode.commands.executeCommand("setContext", VOICE_CONVERSATION_ACTIVE_CONTEXT, true);
       await openNewSocrAItesChat(this.executeChatCommand);
+      if (!this.active) {
+        return;
+      }
     } catch (error: unknown) {
       this.stop();
       throw error;
     }
     void vscode.window.showInformationMessage("SocrAItes call started. Speak naturally, then pause to send.");
     void this.listenForTurn();
+  }
+
+  async toggle(): Promise<void> {
+    if (this.active) {
+      this.stop();
+      return;
+    }
+    await this.start();
   }
 
   stop(): void {

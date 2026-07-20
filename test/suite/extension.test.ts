@@ -8,6 +8,7 @@ const commands = [
   "maieutic.clearPointer",
   "maieutic.demoAtCursor",
   "maieutic.clear",
+  "maieutic.toggleVoiceConversation",
   "maieutic.startVoiceConversation",
   "maieutic.stopVoiceConversation",
   "maieutic.configureOpenAiTts",

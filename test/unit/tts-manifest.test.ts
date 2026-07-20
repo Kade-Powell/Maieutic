@@ -35,6 +35,7 @@ describe("voice manifest", () => {
     assert.equal(manifest.publisher, "TenGallonTechnology");
     assert.deepEqual(manifest.dependencies, { openai: "6.48.0" });
     for (const command of [
+      "maieutic.toggleVoiceConversation",
       "maieutic.startVoiceConversation",
       "maieutic.stopVoiceConversation",
       "maieutic.configureLocalTts",
@@ -48,8 +49,8 @@ describe("voice manifest", () => {
       assert.ok(commands?.includes(command), `${command} is not contributed`);
     }
     assert.equal(
-      manifest.contributes?.commands?.find(({ command }) => command === "maieutic.startVoiceConversation")?.icon,
-      "$(mic-filled)",
+      manifest.contributes?.commands?.find(({ command }) => command === "maieutic.toggleVoiceConversation")?.icon,
+      "$(call-outgoing)",
     );
   });
 
@@ -59,13 +60,7 @@ describe("voice manifest", () => {
     assert.equal(manifest.extensionPack, undefined);
     assert.deepEqual(manifest.contributes?.menus?.["chat/input/status"], [
       {
-        command: "maieutic.startVoiceConversation",
-        when: "!maieutic.voiceConversationActive",
-        group: "navigation@1",
-      },
-      {
-        command: "maieutic.stopVoiceConversation",
-        when: "maieutic.voiceConversationActive",
+        command: "maieutic.toggleVoiceConversation",
         group: "navigation@1",
       },
     ]);

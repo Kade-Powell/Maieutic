@@ -5,7 +5,7 @@ Run this matrix before a Marketplace release and whenever the prompt, tools, or 
 ## Setup
 
 1. Package and install the current Maieutic VSIX in a clean VS Code profile.
-2. Open Chat and confirm exactly one Maieutic microphone is visible next to the Chat input. Confirm Maieutic has not installed `ms-vscode.vscode-speech`.
+2. Open Chat and confirm exactly one Maieutic call handset is visible next to the Chat input. Confirm Maieutic has not installed `ms-vscode.vscode-speech`.
 3. Confirm **SocrAItes** is selectable in the agent picker for typed conversations and **SocrAItes Discovery** is hidden.
 4. Type `@socraites`, send one message, and confirm the native participant remains selected for the next turn.
 5. Open a representative repository containing instructions, docs, implementation code, and tests.
@@ -117,13 +117,13 @@ Expected: synthesis or playback stops without retrying, Chat remains usable, tex
 
 ### Voice conversation first use
 
-With no local model in extension storage, click the Maieutic microphone and review the download disclosure. Cancel once, confirm no conversation starts, then approve it. Grant Visual Studio Code microphone access if macOS asks.
+With no local model in extension storage, click the Maieutic call handset and review the download disclosure. Cancel once, confirm no conversation starts, then approve it. Grant Visual Studio Code microphone access if macOS asks.
 
-Expected: the filled Maieutic microphone is visible independently from VS Code's speech control. Clicking it immediately opens a fresh Chat with `@socraites` selected and shows persistent starting or listening status. Maieutic downloads the official `base.en` model only after approval, rejects a model that fails integrity verification, keeps it in private extension storage, and enters listening state after preparation. A denied microphone permission produces an error with an **Open Microphone Settings** action instead of leaving the call apparently idle.
+Expected: the Maieutic handset is visually distinct from VS Code's dictation microphone. Clicking it immediately opens a fresh Chat with `@socraites` selected and shows persistent starting or listening status. Maieutic downloads the official `base.en` model only after approval, rejects a model that fails integrity verification, keeps it in private extension storage, and enters listening state after preparation. A denied microphone permission produces an error with an **Open Microphone Settings** action instead of leaving the call apparently idle.
 
 ### Continuous voice turn
 
-Select the free system provider, click the Maieutic microphone, and say: `Walk me through how this function validates its input.` Stop speaking and do not touch the Chat input.
+Select the free system provider, click the Maieutic call handset, and say: `Walk me through how this function validates its input.` Stop speaking and do not touch the Chat input.
 
 Expected: Maieutic ends capture after the pause, transcribes locally, submits one `@socraites` turn in the fresh call Chat regardless of the previously selected typed agent, makes one applicable visual change, returns only one short teaching step and one question, speaks that response, and resumes listening automatically after playback. It remains active through learner silence until Stop is selected. Silence or music-only recognition is ignored and retried rather than submitted, and a 20-second interval without detected speech does not leave a stuck native process.
 
@@ -143,7 +143,7 @@ Expected: the answer remains in the same Chat history. SocrAItes responds to the
 
 Repeat the flow and click the same Chat control during capture, local transcription, narration, and the listening state after a response.
 
-Expected: the microphone changes to a stop control only while active. Stopping cancels the active local process, Chat response, or playback, returns the control to a microphone, does not retry automatically, and leaves Chat usable. No turn, interruption, or narration file remains in extension storage.
+Expected: clicking the same handset again cancels the active local process, Chat response, or playback, does not retry automatically, and leaves Chat usable. No turn, interruption, or narration file remains in extension storage.
 
 ### Speech feature independence
 

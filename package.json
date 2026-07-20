@@ -3,7 +3,7 @@
   "displayName": "Maieutic",
   "description": "Read-only Socratic codebase teaching with visual focus and a natural local or OpenAI voice conversation.",
   "icon": "media/icon.png",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "TenGallonTechnology",
   "license": "MIT",
   "private": true,
@@ -123,6 +123,11 @@
         "command": "maieutic.clear",
         "title": "Maieutic: Clear",
         "icon": "$(close-all)"
+      },
+      {
+        "command": "maieutic.toggleVoiceConversation",
+        "title": "Maieutic: Toggle SocrAItes Call",
+        "icon": "$(call-outgoing)"
       },
       {
         "command": "maieutic.startVoiceConversation",
@@ -294,13 +299,7 @@
     "menus": {
       "chat/input/status": [
         {
-          "command": "maieutic.startVoiceConversation",
-          "when": "!maieutic.voiceConversationActive",
-          "group": "navigation@1"
-        },
-        {
-          "command": "maieutic.stopVoiceConversation",
-          "when": "maieutic.voiceConversationActive",
+          "command": "maieutic.toggleVoiceConversation",
           "group": "navigation@1"
         }
       ]

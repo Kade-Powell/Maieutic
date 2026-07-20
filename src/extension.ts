@@ -17,6 +17,7 @@ import type { SpeakInput } from "./speech-model.js";
 import {
   START_VOICE_CONVERSATION_COMMAND,
   STOP_VOICE_CONVERSATION_COMMAND,
+  TOGGLE_VOICE_CONVERSATION_COMMAND,
   VoiceConversationController,
 } from "./voice-conversation-controller.js";
 
@@ -55,6 +56,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       speech,
       () => voiceConversation.onParticipantTurnComplete(),
     ),
+    registerCommand(TOGGLE_VOICE_CONVERSATION_COMMAND, () => voiceConversation.toggle()),
     registerCommand(START_VOICE_CONVERSATION_COMMAND, () => voiceConversation.start()),
     registerCommand(STOP_VOICE_CONVERSATION_COMMAND, () => voiceConversation.stop()),
     registerCommand(SHOW_BUILD_INFO_COMMAND, () => showBuildInfo(context)),
