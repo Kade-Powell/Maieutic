@@ -4,6 +4,8 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+## 0.0.4 - 2026-07-20
+
 - Fixed the Chat call control so it is visible, opens a fresh `@socraites` session immediately, and reports each call phase while listening continues in the background.
 - Made local microphone capture more sensitive and recover after 20 seconds without detected speech instead of waiting indefinitely.
 - Added a loopback-only OpenAI-compatible neural TTS provider with configurable endpoint, model, and voice for services such as LocalAI and Kokoro.
@@ -12,9 +14,6 @@ All notable changes to Maieutic are documented here.
 - Added full-duplex macOS call audio with echo cancellation, learner barge-in, local interruption transcription, and automatic SocrAItes turn resumption.
 - Restored the selectable SocrAItes custom agent for typed conversations while keeping every one-button call routed to the native SocrAItes participant.
 - Shortened teaching turns and adopted a measured narration cadence with natural pauses and synchronized visual cues.
-
-## 0.0.4 - 2026-07-18
-
 - Added the Maieutic brand mark and Marketplace gallery banner.
 - Added packaging coverage for the Marketplace icon and editable SVG exclusion.
 - Made applicable repository lessons use visual guidance by default instead of returning a text itinerary.
