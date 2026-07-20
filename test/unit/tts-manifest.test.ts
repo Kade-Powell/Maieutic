@@ -8,7 +8,7 @@ interface Manifest {
   publisher?: string;
   dependencies?: Record<string, string>;
   contributes?: {
-    commands?: Array<{ command?: string }>;
+    commands?: Array<{ command?: string; icon?: string }>;
     menus?: Record<string, Array<{ command?: string; when?: string }>>;
     languageModelTools?: Array<{
       name?: string;
@@ -47,6 +47,10 @@ describe("voice manifest", () => {
     ]) {
       assert.ok(commands?.includes(command), `${command} is not contributed`);
     }
+    assert.equal(
+      manifest.contributes?.commands?.find(({ command }) => command === "maieutic.startVoiceConversation")?.icon,
+      "$(mic-filled)",
+    );
   });
 
   it("owns local speech input and contributes exactly one visible Chat control", async () => {

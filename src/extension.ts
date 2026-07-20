@@ -30,6 +30,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const speech = new SpeechController(context);
   await speech.initialize();
   const voiceConversation = new VoiceConversationController(context, speech);
+  await voiceConversation.initialize();
 
   if (context.extensionMode === vscode.ExtensionMode.Development) {
     const status = vscode.window.createStatusBarItem(

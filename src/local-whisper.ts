@@ -165,6 +165,9 @@ export class LocalWhisper implements vscode.Disposable {
       if (reportedError !== undefined) {
         throw new Error(reportedError);
       }
+      if (events.some((event) => event.event === "no_speech")) {
+        throw new NoSpeechDetectedError();
+      }
       if (code !== 0 || !events.some((event) => event.event === "recorded")) {
         throw new Error(stderr.trim() || "Maieutic could not capture microphone audio.");
       }

@@ -2,12 +2,17 @@ import * as vscode from "vscode";
 import { LocalWhisper, type LocalWhisperPhase } from "./local-whisper.js";
 import { NoSpeechDetectedError } from "./local-whisper-model.js";
 import type { SpeechController } from "./speech-controller.js";
+import {
+  openNewSocrAItesChat,
+  submitSocrAItesTranscript,
+  type ChatCommandExecutor,
+} from "./voice-conversation-model.js";
 
 export const START_VOICE_CONVERSATION_COMMAND = "maieutic.startVoiceConversation";
 export const STOP_VOICE_CONVERSATION_COMMAND = "maieutic.stopVoiceConversation";
 export const VOICE_CONVERSATION_ACTIVE_CONTEXT = "maieutic.voiceConversationActive";
 
-type ConversationPhase = "idle" | LocalWhisperPhase | "waiting";
+type ConversationPhase = "idle" | "starting" | LocalWhisperPhase | "waiting";
 
 export class VoiceConversationController implements vscode.Disposable {
   private readonly whisper: LocalWhisper;
@@ -16,18 +21,31 @@ export class VoiceConversationController implements vscode.Disposable {
   private turnCancellation: AbortController | undefined;
   private resumeTimer: ReturnType<typeof setTimeout> | undefined;
   private pendingTranscript: string | undefined;
-  private status: vscode.Disposable | undefined;
+  private consecutiveNoSpeech = 0;
+  private readonly status: vscode.StatusBarItem;
+  private readonly executeChatCommand: ChatCommandExecutor;
 
   constructor(
     context: vscode.ExtensionContext,
     private readonly speech: SpeechController,
   ) {
     this.whisper = new LocalWhisper(context, (phase) => this.setPhase(phase));
+    this.status = vscode.window.createStatusBarItem(
+      "maieutic.voiceConversation.status",
+      vscode.StatusBarAlignment.Right,
+      101,
+    );
+    this.status.name = "SocrAItes voice conversation";
+    this.status.command = STOP_VOICE_CONVERSATION_COMMAND;
+    this.executeChatCommand = async (command, ...args) => vscode.commands.executeCommand(command, ...args);
     this.speech.setBargeInHandler({
       onSpeechStart: () => this.onBargeInStarted(),
       onAudioCaptured: (audioPath, signal) => this.onBargeInCaptured(audioPath, signal),
     });
-    void vscode.commands.executeCommand("setContext", VOICE_CONVERSATION_ACTIVE_CONTEXT, false);
+  }
+
+  async initialize(): Promise<void> {
+    await vscode.commands.executeCommand("setContext", VOICE_CONVERSATION_ACTIVE_CONTEXT, false);
   }
 
   async start(): Promise<void> {
@@ -35,11 +53,19 @@ export class VoiceConversationController implements vscode.Disposable {
       return;
     }
     this.speech.stop();
-    await vscode.commands.executeCommand("workbench.action.chat.cancel");
+    this.setPhase("starting");
     this.active = true;
+    this.consecutiveNoSpeech = 0;
     this.speech.setConversationActive(true);
-    await vscode.commands.executeCommand("setContext", VOICE_CONVERSATION_ACTIVE_CONTEXT, true);
-    await this.listenForTurn();
+    try {
+      await vscode.commands.executeCommand("setContext", VOICE_CONVERSATION_ACTIVE_CONTEXT, true);
+      await openNewSocrAItesChat(this.executeChatCommand);
+    } catch (error: unknown) {
+      this.stop();
+      throw error;
+    }
+    void vscode.window.showInformationMessage("SocrAItes call started. Speak naturally, then pause to send.");
+    void this.listenForTurn();
   }
 
   stop(): void {
@@ -48,6 +74,7 @@ export class VoiceConversationController implements vscode.Disposable {
     }
     this.active = false;
     this.pendingTranscript = undefined;
+    this.consecutiveNoSpeech = 0;
     this.turnCancellation?.abort();
     this.turnCancellation = undefined;
     if (this.resumeTimer !== undefined) {
@@ -85,7 +112,7 @@ export class VoiceConversationController implements vscode.Disposable {
     this.stop();
     this.speech.setBargeInHandler(undefined);
     this.whisper.dispose();
-    this.status?.dispose();
+    this.status.dispose();
   }
 
   private async listenForTurn(): Promise<void> {
@@ -106,12 +133,23 @@ export class VoiceConversationController implements vscode.Disposable {
         return;
       }
       if (error instanceof NoSpeechDetectedError) {
+        this.consecutiveNoSpeech += 1;
+        if (this.consecutiveNoSpeech === 1) {
+          void vscode.window.showWarningMessage(
+            "SocrAItes is listening but has not detected speech. Check the selected microphone and macOS microphone permission.",
+            "End Call",
+          ).then((action) => {
+            if (action === "End Call") {
+              this.stop();
+            }
+          });
+        }
         retryAfterNoSpeech = true;
         return;
       }
       this.stop();
       if (!(error instanceof vscode.CancellationError)) {
-        await vscode.window.showErrorMessage(toErrorMessage(error));
+        await showCallError(error);
       }
     } finally {
       if (this.turnCancellation === cancellation) {
@@ -154,7 +192,7 @@ export class VoiceConversationController implements vscode.Disposable {
         return;
       }
       this.stop();
-      await vscode.window.showErrorMessage(toErrorMessage(error));
+      await showCallError(error);
     }
   }
 
@@ -162,11 +200,9 @@ export class VoiceConversationController implements vscode.Disposable {
     if (!this.active) {
       return;
     }
+    this.consecutiveNoSpeech = 0;
     this.setPhase("waiting");
-    await vscode.commands.executeCommand("workbench.action.chat.open", {
-      query: `@socraites ${transcript}`,
-      isPartialQuery: false,
-    });
+    await submitSocrAItesTranscript(this.executeChatCommand, transcript);
   }
 
   private scheduleNextTurn(): void {
@@ -188,22 +224,34 @@ export class VoiceConversationController implements vscode.Disposable {
 
   private setPhase(phase: ConversationPhase): void {
     this.phase = phase;
-    this.status?.dispose();
-    this.status = undefined;
     switch (phase) {
+      case "starting":
+        this.status.text = "$(loading~spin) SocrAItes: Starting call";
+        this.status.tooltip = "Starting a new SocrAItes voice conversation";
+        this.status.show();
+        break;
       case "preparing":
-        this.status = vscode.window.setStatusBarMessage("$(loading~spin) Maieutic: Preparing local speech");
+        this.status.text = "$(loading~spin) SocrAItes: Preparing speech";
+        this.status.tooltip = "Preparing local speech recognition";
+        this.status.show();
         break;
       case "listening":
-        this.status = vscode.window.setStatusBarMessage("$(mic) Maieutic: Listening");
+        this.status.text = "$(mic-filled) SocrAItes: Listening";
+        this.status.tooltip = "Listening locally; click to end the call";
+        this.status.show();
         break;
       case "transcribing":
-        this.status = vscode.window.setStatusBarMessage("$(loading~spin) Maieutic: Transcribing locally");
+        this.status.text = "$(loading~spin) SocrAItes: Transcribing";
+        this.status.tooltip = "Transcribing locally; click to end the call";
+        this.status.show();
         break;
       case "waiting":
-        this.status = vscode.window.setStatusBarMessage("$(comment-discussion) Maieutic: Waiting for SocrAItes");
+        this.status.text = "$(comment-discussion) SocrAItes: Thinking";
+        this.status.tooltip = "Waiting for SocrAItes; click to end the call";
+        this.status.show();
         break;
       case "idle":
+        this.status.hide();
         break;
     }
   }
@@ -211,4 +259,19 @@ export class VoiceConversationController implements vscode.Disposable {
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+async function showCallError(error: unknown): Promise<void> {
+  const message = toErrorMessage(error);
+  if (!/microphone permission was denied/iu.test(message)) {
+    await vscode.window.showErrorMessage(message);
+    return;
+  }
+
+  const action = await vscode.window.showErrorMessage(message, "Open Microphone Settings");
+  if (action === "Open Microphone Settings") {
+    await vscode.env.openExternal(
+      vscode.Uri.parse("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"),
+    );
+  }
 }

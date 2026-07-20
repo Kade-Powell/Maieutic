@@ -22,10 +22,12 @@ describe("local Whisper", () => {
       '{"event":"started"}',
       "not json",
       '{"event":"error","message":"denied"}',
+      '{"event":"no_speech"}',
       '{"event":"recorded"}',
     ].join("\n")), [
       { event: "started" },
       { event: "error", message: "denied" },
+      { event: "no_speech" },
       { event: "recorded" },
     ]);
   });

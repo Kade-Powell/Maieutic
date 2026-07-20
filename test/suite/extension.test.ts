@@ -52,6 +52,9 @@ suite("Maieutic extension", () => {
     for (const tool of tools) {
       assert.ok(vscode.lm.tools.some((candidate) => candidate.name === tool), `${tool} is not registered`);
     }
+    for (const command of ["workbench.action.chat.open", "workbench.action.chat.newChat"]) {
+      assert.ok(registeredCommands.includes(command), `${command} is unavailable in this VS Code build`);
+    }
   });
 
   test("runs independent focus and pointer controls without changing the document", async () => {

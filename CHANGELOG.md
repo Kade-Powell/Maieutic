@@ -4,6 +4,8 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+- Fixed the Chat call control so it is visible, opens a fresh `@socraites` session immediately, and reports each call phase while listening continues in the background.
+- Made local microphone capture more sensitive and recover after 20 seconds without detected speech instead of waiting indefinitely.
 - Added a loopback-only OpenAI-compatible neural TTS provider with configurable endpoint, model, and voice for services such as LocalAI and Kokoro.
 - Added provider validation, WAV validation, response limits, timeout handling, and manual acceptance coverage for local neural speech.
 - Added deterministic narration cues that move the visual pointer across uniquely matched symbols during playback without another model call or changing the user's caret.

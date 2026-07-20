@@ -93,11 +93,11 @@ private final class RecordingSession: @unchecked Sendable {
                 }
                 let rms = sqrt(squareSum / Float(end - offset))
                 let decibels = 20 * log10(max(rms, 0.000_001))
-                if decibels > -42 {
+                if decibels > -48 {
                     if lastSpeechAt == nil {
                         candidateSpeechDuration += Double(end - offset) / buffer.format.sampleRate
                     }
-                    if candidateSpeechDuration >= 0.12 || lastSpeechAt != nil {
+                    if candidateSpeechDuration >= 0.10 || lastSpeechAt != nil {
                         lastSpeechAt = Date()
                     }
                 } else if lastSpeechAt == nil {
@@ -160,10 +160,12 @@ private final class RecordingSession: @unchecked Sendable {
             stop(success: true)
         } else if lastSpeechAt != nil, now.timeIntervalSince(startedAt) >= 60 {
             stop(success: true)
+        } else if lastSpeechAt == nil, now.timeIntervalSince(startedAt) >= 20 {
+            stop(success: true, event: "no_speech")
         }
     }
 
-    private func stop(success: Bool, message: String? = nil) {
+    private func stop(success: Bool, event: String = "recorded", message: String? = nil) {
         lock.lock()
         guard !stopping else {
             lock.unlock()
@@ -182,7 +184,7 @@ private final class RecordingSession: @unchecked Sendable {
         lock.unlock()
 
         if success {
-            emit("recorded")
+            emit(event)
             exit(EXIT_SUCCESS)
         } else {
             emit("error", message: message ?? "Microphone recording failed.")

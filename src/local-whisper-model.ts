@@ -10,7 +10,7 @@ export const WHISPER_MODEL = {
 } as const;
 
 export interface RecorderEvent {
-  event: "started" | "recorded" | "error";
+  event: "started" | "recorded" | "no_speech" | "error";
   message?: string;
 }
 
@@ -29,7 +29,12 @@ export function parseRecorderEvents(output: string): RecorderEvent[] {
     }
     try {
       const candidate = JSON.parse(line) as Partial<RecorderEvent>;
-      if (candidate.event === "started" || candidate.event === "recorded" || candidate.event === "error") {
+      if (
+        candidate.event === "started"
+        || candidate.event === "recorded"
+        || candidate.event === "no_speech"
+        || candidate.event === "error"
+      ) {
         events.push({
           event: candidate.event,
           ...(typeof candidate.message === "string" ? { message: candidate.message } : {}),

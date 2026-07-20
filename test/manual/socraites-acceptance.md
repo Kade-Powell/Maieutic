@@ -119,13 +119,13 @@ Expected: synthesis or playback stops without retrying, Chat remains usable, tex
 
 With no local model in extension storage, click the Maieutic microphone and review the download disclosure. Cancel once, confirm no conversation starts, then approve it. Grant Visual Studio Code microphone access if macOS asks.
 
-Expected: Maieutic downloads the official `base.en` model only after approval, rejects a model that fails integrity verification, keeps it in private extension storage, and enters listening state after preparation.
+Expected: the filled Maieutic microphone is visible independently from VS Code's speech control. Clicking it immediately opens a fresh Chat with `@socraites` selected and shows persistent starting or listening status. Maieutic downloads the official `base.en` model only after approval, rejects a model that fails integrity verification, keeps it in private extension storage, and enters listening state after preparation. A denied microphone permission produces an error with an **Open Microphone Settings** action instead of leaving the call apparently idle.
 
 ### Continuous voice turn
 
 Select the free system provider, click the Maieutic microphone, and say: `Walk me through how this function validates its input.` Stop speaking and do not touch the Chat input.
 
-Expected: Maieutic ends capture after the pause, transcribes locally, submits one `@socraites` turn in the current Chat regardless of the selected typed agent, makes one applicable visual change, returns only one short teaching step and one question, speaks that response, and resumes listening automatically after playback. It remains active through learner silence until Stop is selected, and silence or music-only recognition is ignored and retried rather than submitted.
+Expected: Maieutic ends capture after the pause, transcribes locally, submits one `@socraites` turn in the fresh call Chat regardless of the previously selected typed agent, makes one applicable visual change, returns only one short teaching step and one question, speaks that response, and resumes listening automatically after playback. It remains active through learner silence until Stop is selected. Silence or music-only recognition is ignored and retried rather than submitted, and a 20-second interval without detected speech does not leave a stuck native process.
 
 ### Learner barge-in
 
