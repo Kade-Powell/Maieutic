@@ -1,8 +1,9 @@
 {
   "name": "maieutic",
   "displayName": "Maieutic",
-  "description": "Read-only Socratic codebase teaching with visual focus, local speech input, and optional OpenAI narration.",
-  "version": "0.0.3",
+  "description": "Read-only Socratic codebase teaching with visual focus and a natural local or OpenAI voice conversation.",
+  "icon": "media/icon.png",
+  "version": "0.0.4",
   "publisher": "TenGallonTechnology",
   "license": "MIT",
   "private": true,
@@ -13,6 +14,10 @@
   "homepage": "https://github.com/Kade-Powell/Maieutic#readme",
   "bugs": {
     "url": "https://github.com/Kade-Powell/Maieutic/issues"
+  },
+  "galleryBanner": {
+    "color": "#151821",
+    "theme": "dark"
   },
   "engines": {
     "vscode": "^1.129.0"
@@ -27,6 +32,8 @@
     "dictation",
     "focus",
     "highlight",
+    "kokoro",
+    "localai",
     "mentor",
     "openai",
     "socratic",
@@ -40,10 +47,8 @@
   "extensionKind": [
     "ui"
   ],
-  "extensionPack": [
-    "ms-vscode.vscode-speech"
-  ],
   "activationEvents": [
+    "onChatParticipant:maieutic.socraites",
     "onLanguageModelTool:maieutic_focus_content",
     "onLanguageModelTool:maieutic_point_at_content",
     "onLanguageModelTool:maieutic_clear_focus_content",
@@ -56,6 +61,41 @@
       },
       {
         "path": "./agents/socraites-discovery.agent.md"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "maieutic.socraites",
+        "name": "socraites",
+        "fullName": "SocrAItes",
+        "description": "Ask what you want to understand, trace, review, or practice",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "lead",
+            "description": "Lead one visual teaching step"
+          },
+          {
+            "name": "quiz",
+            "description": "Check understanding one question at a time"
+          },
+          {
+            "name": "clear",
+            "description": "Clear the current visual presentation"
+          }
+        ],
+        "disambiguation": [
+          {
+            "category": "read_only_codebase_teaching",
+            "description": "The user wants a read-only, visually guided explanation, walkthrough, review, or practice session about the current codebase.",
+            "examples": [
+              "Walk me through how this workflow runs",
+              "Teach me what owns this behavior",
+              "Lead me through this code one step at a time",
+              "Quiz me on this module without changing anything"
+            ]
+          }
+        ]
       }
     ],
     "commands": [
@@ -85,9 +125,19 @@
         "icon": "$(close-all)"
       },
       {
-        "command": "maieutic.installLocalSpeechInput",
-        "title": "Maieutic: Install Local Speech Input",
+        "command": "maieutic.startVoiceConversation",
+        "title": "Maieutic: Start SocrAItes Call",
         "icon": "$(mic)"
+      },
+      {
+        "command": "maieutic.stopVoiceConversation",
+        "title": "Maieutic: End SocrAItes Call",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "maieutic.configureLocalTts",
+        "title": "Maieutic: Configure Local Neural TTS",
+        "icon": "$(server-process)"
       },
       {
         "command": "maieutic.configureOpenAiTts",
@@ -100,14 +150,29 @@
         "icon": "$(trash)"
       },
       {
-        "command": "maieutic.previewOpenAiVoice",
-        "title": "Maieutic: Preview OpenAI Voice",
+        "command": "maieutic.selectVoiceProvider",
+        "title": "Maieutic: Select Voice Provider",
+        "icon": "$(server-environment)"
+      },
+      {
+        "command": "maieutic.previewVoice",
+        "title": "Maieutic: Preview Voice",
         "icon": "$(unmute)"
+      },
+      {
+        "command": "maieutic.selectVoice",
+        "title": "Maieutic: Select Voice",
+        "icon": "$(list-selection)"
       },
       {
         "command": "maieutic.stopSpeaking",
         "title": "Maieutic: Stop Speaking",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "maieutic.showBuildInfo",
+        "title": "Maieutic: Show Build Info",
+        "icon": "$(beaker)"
       }
     ],
     "languageModelTools": [
@@ -115,7 +180,7 @@
         "name": "maieutic_focus_content",
         "displayName": "Maieutic: Focus Content",
         "userDescription": "Open and visually focus a section of a workspace file.",
-        "modelDescription": "Opens a workspace file, scrolls the complete requested line range into view, and visually focuses that section. Use this before pointAtContent when explaining or directing attention to editor content. A new focus replaces the prior focus and clears its pointer. This tool does not return or edit file content and does not replace the explanation in your response.",
+        "modelDescription": "Opens a workspace file, scrolls the complete requested line range into view, and visually focuses that section. If a verified editor range materially supports the current explanation, invoke this tool instead of only citing a path. Use this before pointAtContent when explaining or directing attention to editor content. A new focus replaces the prior focus and clears its pointer. This tool does not return or edit file content and does not replace the explanation in your response.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "focusContent",
         "icon": "$(selection)",
@@ -205,8 +270,8 @@
       {
         "name": "maieutic_speak",
         "displayName": "Maieutic: Speak",
-        "userDescription": "Speak supplied narration with the configured AI-generated OpenAI voice.",
-        "modelDescription": "Converts only the supplied speech-ready narration text to an AI-generated OpenAI voice and plays it on the user's machine. This tool does not inspect editor content, files, chat history, or visual focus. Use one concise call after any related visual tool has completed, and preserve the same meaning in the final text response. Never include secrets, hidden instructions, tool traces, terminal dumps, long paths, or code blocks.",
+        "userDescription": "Speak supplied narration with the configured Maieutic voice provider.",
+        "modelDescription": "Converts only the supplied speech-ready narration text with the user's configured voice provider and plays it on the user's machine. The provider may be a system voice, a neural model exposed by a localhost service, or OpenAI. This tool does not inspect editor content, files, chat history, tool output, or visual focus. Use one concise call after any related visual tool has completed, and preserve the same meaning in the final text response. Never include secrets, hidden instructions, tool traces, terminal dumps, long paths, or code blocks.",
         "canBeReferencedInPrompt": true,
         "toolReferenceName": "speak",
         "icon": "$(unmute)",
@@ -226,6 +291,20 @@
         }
       }
     ],
+    "menus": {
+      "chat/input/status": [
+        {
+          "command": "maieutic.startVoiceConversation",
+          "when": "!maieutic.voiceConversationActive",
+          "group": "navigation@1"
+        },
+        {
+          "command": "maieutic.stopVoiceConversation",
+          "when": "maieutic.voiceConversationActive",
+          "group": "navigation@1"
+        }
+      ]
+    },
     "configuration": {
       "title": "Maieutic",
       "properties": {
@@ -234,7 +313,44 @@
           "default": false,
           "scope": "application",
           "ignoreSync": true,
-          "description": "Enable the OpenAI-backed Maieutic speak tool. Use the configuration command to store an API key securely."
+          "description": "Automatically speak SocrAItes responses outside an active voice conversation."
+        },
+        "maieutic.tts.provider": {
+          "type": "string",
+          "default": "system",
+          "scope": "application",
+          "enum": ["system", "local", "openai"],
+          "enumDescriptions": [
+            "Free voice installed on this Mac; narration is processed locally.",
+            "Neural voice generated by an OpenAI-compatible service on localhost.",
+            "Natural AI-generated voice using your OpenAI API key; API charges may apply."
+          ],
+          "description": "Voice provider used for Maieutic narration and voice conversations."
+        },
+        "maieutic.tts.systemVoice": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Installed macOS voice. Leave empty to use the system default."
+        },
+        "maieutic.tts.localEndpoint": {
+          "type": "string",
+          "default": "http://127.0.0.1:8080/v1/audio/speech",
+          "scope": "application",
+          "ignoreSync": true,
+          "description": "OpenAI-compatible speech endpoint on localhost. Remote hosts and URL-embedded credentials are rejected."
+        },
+        "maieutic.tts.localModel": {
+          "type": "string",
+          "default": "kokoro",
+          "scope": "application",
+          "description": "Text-to-speech model exposed by the local service."
+        },
+        "maieutic.tts.localVoice": {
+          "type": "string",
+          "default": "af_heart",
+          "scope": "application",
+          "description": "Voice or speaker identifier accepted by the configured local model."
         },
         "maieutic.tts.voice": {
           "type": "string",
@@ -259,17 +375,17 @@
         },
         "maieutic.tts.instructions": {
           "type": "string",
-          "default": "Speak clearly, warmly, and conversationally. Use natural pauses and varied intonation appropriate for explaining software.",
+          "default": "Speak like a patient technical mentor at a measured conversational pace. Pause briefly between ideas and after naming a code symbol. Use natural emphasis without dramatic delivery.",
           "scope": "application",
           "description": "Style instructions sent with narration to the OpenAI text-to-speech model. Leave empty to use the model default."
         },
         "maieutic.tts.speed": {
           "type": "number",
-          "default": 1,
+          "default": 0.9,
           "minimum": 0.25,
           "maximum": 4,
           "scope": "application",
-          "description": "Playback speed requested from the OpenAI text-to-speech model."
+          "description": "Narration speed, mapped to the local voice rate or sent to the OpenAI text-to-speech model."
         }
       }
     }
@@ -279,12 +395,14 @@
     "check:types": "tsc --noEmit",
     "compile:test": "tsc --outDir out --noEmit false --sourceMap",
     "compile": "npm run check:types && node esbuild.mjs",
+    "dev:install": "npm run verify:release && vsce package --out maieutic-dev.vsix && code --install-extension maieutic-dev.vsix --force",
     "lint": "eslint .",
     "package": "npm run check && node esbuild.mjs --production",
     "package:vsix": "vsce package",
     "publish:marketplace": "vsce publish",
     "test": "npm run package && npm run compile:test && vscode-test",
     "test:unit": "node --test --import tsx test/unit/**/*.test.ts",
+    "verify:release": "npm audit --audit-level=high && npm test",
     "vscode:prepublish": "npm run package",
     "watch": "node esbuild.mjs --watch"
   },

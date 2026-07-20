@@ -7,6 +7,19 @@
       "group": "build",
       "problemMatcher": "$tsc",
       "label": "npm: compile"
+    },
+    {
+      "type": "npm",
+      "script": "verify:release",
+      "group": "test",
+      "problemMatcher": "$tsc",
+      "label": "npm: verify:release"
+    },
+    {
+      "type": "npm",
+      "script": "dev:install",
+      "problemMatcher": "$tsc",
+      "label": "npm: dev:install"
     }
   ]
 }

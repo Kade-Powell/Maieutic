@@ -3,7 +3,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { LocalWavPlayer, playerInvocation } from "../../src/wav-player.js";
+import {
+  callAudioInvocation,
+  LocalWavPlayer,
+  playerInvocation,
+} from "../../src/wav-player.js";
 
 const audioPath = "/tmp/a path/voice'quote.wav";
 
@@ -13,6 +17,23 @@ describe("playerInvocation", () => {
       command: "afplay",
       args: [audioPath],
     });
+  });
+
+  it("passes duplex call paths as direct process arguments", () => {
+    assert.deepEqual(
+      callAudioInvocation("/private/helper", audioPath, "/tmp/private capture.wav"),
+      {
+        command: "/private/helper",
+        args: [audioPath, "/tmp/private capture.wav"],
+      },
+    );
+    assert.deepEqual(
+      callAudioInvocation("/private/helper", audioPath, "/tmp/private capture.wav", true),
+      {
+        command: "/private/helper",
+        args: [audioPath, "/tmp/private capture.wav", "--acoustic-guard"],
+      },
+    );
   });
 
   it("passes a Linux path as a direct process argument", () => {
@@ -58,4 +79,5 @@ describe("playerInvocation", () => {
       await rm(root, { force: true, recursive: true });
     }
   });
+
 });

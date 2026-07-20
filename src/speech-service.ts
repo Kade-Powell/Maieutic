@@ -10,9 +10,19 @@ export interface SpeechSynthesizer {
 }
 
 export interface SpeechPlayer {
-  play(audio: Uint8Array, signal: AbortSignal): Promise<void>;
+  play(audio: Uint8Array, signal: AbortSignal, events?: SpeechPlaybackEvents): Promise<void>;
   stop(): void;
 }
+
+export interface SpeechPlaybackEvents {
+  onStarted?(): void;
+  onInterrupted?(): void;
+}
+
+export type SpeechPlaybackStarted = (
+  request: SpeechRequest,
+  signal: AbortSignal,
+) => void | (() => void);
 
 interface ActiveSpeech {
   id: number;
@@ -30,7 +40,12 @@ export class SpeechService {
     private readonly onPhaseChanged: (phase: SpeechPhase) => void = () => {},
   ) {}
 
-  speak(request: SpeechRequest, apiKey: string, externalSignal?: AbortSignal): Promise<void> {
+  speak(
+    request: SpeechRequest,
+    apiKey: string,
+    externalSignal?: AbortSignal,
+    onPlaybackStarted?: SpeechPlaybackStarted,
+  ): Promise<void> {
     const previous = this.active;
     if (previous !== undefined) {
       previous.controller.abort();
@@ -60,7 +75,25 @@ export class SpeechService {
       const audio = await this.synthesizer.synthesize(request, apiKey, controller.signal);
       throwIfSpeechCancelled(controller.signal);
       this.changePhase(id, "playing");
-      await this.player.play(audio, controller.signal);
+      let stopPlaybackObserver: void | (() => void);
+      let playbackObserverClosed = false;
+      const startPlaybackObserverOnce = once(() => {
+        if (!playbackObserverClosed) {
+          stopPlaybackObserver = startPlaybackObserver(onPlaybackStarted, request, controller.signal);
+        }
+      });
+      const stopPlaybackObserverOnce = once(() => {
+        playbackObserverClosed = true;
+        stopObserver(stopPlaybackObserver);
+      });
+      try {
+        await this.player.play(audio, controller.signal, {
+          onStarted: startPlaybackObserverOnce,
+          onInterrupted: stopPlaybackObserverOnce,
+        });
+      } finally {
+        stopPlaybackObserverOnce();
+      }
       throwIfSpeechCancelled(controller.signal);
     });
 
@@ -89,4 +122,35 @@ export class SpeechService {
       this.onPhaseChanged(phase);
     }
   }
+}
+
+function startPlaybackObserver(
+  observer: SpeechPlaybackStarted | undefined,
+  request: SpeechRequest,
+  signal: AbortSignal,
+): void | (() => void) {
+  try {
+    return observer?.(request, signal);
+  } catch {
+    return undefined;
+  }
+}
+
+function stopObserver(stop: void | (() => void)): void {
+  try {
+    stop?.();
+  } catch {
+    // Visual playback observers are optional and cannot fail completed narration.
+  }
+}
+
+function once(callback: () => void): () => void {
+  let called = false;
+  return () => {
+    if (called) {
+      return;
+    }
+    called = true;
+    callback();
+  };
 }

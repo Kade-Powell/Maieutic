@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import * as vscode from "vscode";
+import { FocusController } from "../../src/focus-controller.js";
 
 const commands = [
   "maieutic.focusAroundCursor",
@@ -7,11 +8,15 @@ const commands = [
   "maieutic.clearPointer",
   "maieutic.demoAtCursor",
   "maieutic.clear",
-  "maieutic.installLocalSpeechInput",
+  "maieutic.startVoiceConversation",
+  "maieutic.stopVoiceConversation",
   "maieutic.configureOpenAiTts",
   "maieutic.clearOpenAiApiKey",
-  "maieutic.previewOpenAiVoice",
+  "maieutic.selectVoiceProvider",
+  "maieutic.selectVoice",
+  "maieutic.previewVoice",
   "maieutic.stopSpeaking",
+  "maieutic.showBuildInfo",
 ];
 
 const tools = [
@@ -67,6 +72,34 @@ suite("Maieutic extension", () => {
   test("keeps the combined demo command available", async () => {
     await vscode.commands.executeCommand("maieutic.demoAtCursor");
     await vscode.commands.executeCommand("maieutic.clear");
+  });
+
+  test("moves a resolved narration pointer without moving the user caret", async () => {
+    const editor = vscode.window.activeTextEditor;
+    assert.ok(editor);
+    const controller = new FocusController();
+    const cancellation = new vscode.CancellationTokenSource();
+    try {
+      const originalSelection = editor.selection;
+      controller.focusAroundCursor();
+      const snapshot = await controller.activeFocusSnapshot(cancellation.token);
+      assert.ok(snapshot);
+
+      assert.equal(controller.pointToResolvedRange(snapshot.revision, {
+        start: { line: 1, character: 2 },
+        end: { line: 1, character: 8 },
+      }), true);
+      assert.ok(editor.selection.isEqual(originalSelection));
+
+      controller.clearPointer();
+      assert.equal(controller.pointToResolvedRange(snapshot.revision, {
+        start: { line: 1, character: 2 },
+        end: { line: 1, character: 8 },
+      }), false);
+    } finally {
+      cancellation.dispose();
+      controller.dispose();
+    }
   });
 
   test("allows stop when no speech is active", async () => {

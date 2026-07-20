@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Maieutic</title>
+  <desc id="description">A speech bubble containing code brackets and a precise focus cursor.</desc>
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="#151821"/>
+  <path
+    d="M132 104h248c24.3 0 44 19.7 44 44v170c0 24.3-19.7 44-44 44H264l-88 68v-68h-44c-24.3 0-44-19.7-44-44V148c0-24.3 19.7-44 44-44Z"
+    fill="none"
+    stroke="#F4F2EA"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="22"
+  />
+  <path
+    d="m218 178-52 56 52 56"
+    fill="none"
+    stroke="#35C5B4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="30"
+  />
+  <path d="M256 174v120" stroke="#F4C95D" stroke-linecap="round" stroke-width="18"/>
+  <path
+    d="m294 178 52 56-52 56"
+    fill="none"
+    stroke="#F06C5C"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="30"
+  />
+</svg>

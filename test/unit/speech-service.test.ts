@@ -12,6 +12,7 @@ import {
 
 const request: SpeechRequest = {
   text: "Explain this branch.",
+  provider: "openai",
   voice: "marin",
   speed: 1,
 };
@@ -44,6 +45,90 @@ describe("SpeechService", () => {
       "play:1,2,3",
       "phase:idle",
     ]);
+  });
+
+  it("starts and cleans up playback observers around audio playback", async () => {
+    const events: string[] = [];
+    const synthesizer: SpeechSynthesizer = {
+      async synthesize() {
+        events.push("synthesize");
+        return new Uint8Array([1]);
+      },
+    };
+    const player: SpeechPlayer = {
+      async play(_audio, _signal, playbackEvents) {
+        playbackEvents?.onStarted?.();
+        events.push("play");
+      },
+      stop() {},
+    };
+    const service = new SpeechService(synthesizer, player);
+
+    await service.speak(request, "secret-key", undefined, (receivedRequest, signal) => {
+      assert.equal(receivedRequest, request);
+      assert.equal(signal.aborted, false);
+      events.push("observer:start");
+      return () => events.push("observer:stop");
+    });
+
+    assert.deepEqual(events, ["synthesize", "observer:start", "play", "observer:stop"]);
+  });
+
+  it("stops the playback observer as soon as the learner interrupts", async () => {
+    const events: string[] = [];
+    const synthesizer: SpeechSynthesizer = {
+      async synthesize() {
+        return new Uint8Array([1]);
+      },
+    };
+    const player: SpeechPlayer = {
+      async play(_audio, _signal, playbackEvents) {
+        events.push("play:start");
+        playbackEvents?.onStarted?.();
+        playbackEvents?.onInterrupted?.();
+        events.push("play:end");
+      },
+      stop() {},
+    };
+    const service = new SpeechService(synthesizer, player);
+
+    await service.speak(request, "secret-key", undefined, () => {
+      events.push("observer:start");
+      return () => events.push("observer:stop");
+    });
+
+    assert.deepEqual(events, [
+      "play:start",
+      "observer:start",
+      "observer:stop",
+      "play:end",
+    ]);
+  });
+
+  it("keeps narration independent from playback observer failures", async () => {
+    let playCalls = 0;
+    const synthesizer: SpeechSynthesizer = {
+      async synthesize() {
+        return new Uint8Array([1]);
+      },
+    };
+    const player: SpeechPlayer = {
+      async play(_audio, _signal, playbackEvents) {
+        playbackEvents?.onStarted?.();
+        playCalls += 1;
+      },
+      stop() {},
+    };
+    const service = new SpeechService(synthesizer, player);
+
+    await service.speak(request, "secret-key", undefined, () => {
+      throw new Error("observer start failed");
+    });
+    await service.speak(request, "secret-key", undefined, () => () => {
+      throw new Error("observer cleanup failed");
+    });
+
+    assert.equal(playCalls, 2);
   });
 
   it("cancels synthesis and returns to idle", async () => {

@@ -1,10 +1,14 @@
 # Maieutic
 
-Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, visual tools that guide attention without making changes, local speech input through VS Code Speech, and optional OpenAI voice narration.
+<p align="center">
+  <img src="media/icon.png" alt="Maieutic logo" width="128">
+</p>
+
+Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, visual tools that guide attention without making changes, and one-button voice conversations with local speech recognition and configurable narration.
 
 ## SocrAItes
 
-Select **SocrAItes** from the Chat agent picker. The bundled profile:
+Choose **SocrAItes** from the Chat agent picker for ordinary typed conversations, or type `@socraites` to use Maieutic's native guided participant. Both are bundled with the extension. The native participant stays selected for the rest of that chat and:
 
 - can read and search the workspace, inspect problems, ask questions, and consult primary documentation;
 - cannot edit files, run commands or tests, or create tasks;
@@ -13,7 +17,11 @@ Select **SocrAItes** from the Chat agent picker. The bundled profile:
 - points to verified code and documentation instead of generating paste-ready implementations; and
 - treats workspace `AGENTS.md` and local teaching guidance as domain context without relaxing its read-only boundary.
 
-For broad multi-file discovery, SocrAItes can delegate one bounded investigation to a hidden read-only worker. The worker can search and report evidence but cannot edit, execute, interact with the learner, or control Maieutic's visual tools.
+For broad multi-file discovery, SocrAItes can delegate one bounded investigation to a read-only search worker. The worker can search and report evidence but cannot edit, execute, interact with the learner, or control Maieutic's visual tools.
+
+SocrAItes owns the complete teaching turn. It gathers read-only evidence, requires one successful focus or pointer change when editor content applies, produces one short teaching step, optionally speaks that same step, and then stops for the learner. Prompt wording alone does not control that order.
+
+Reasoning uses the model selected in VS Code Chat. Maieutic does not add a second coding-agent provider or use ACP.
 
 ## Visual Tools
 
@@ -23,41 +31,72 @@ SocrAItes and other compatible VS Code agents can use three independent tools:
 - `#pointAtContent` moves or clears a precise pointer inside that block without scrolling.
 - `#clearFocusContent` removes the complete presentation.
 
-SocrAItes makes at most one visual state change per response, explains one idea, and waits before moving the pointer. This keeps the presentation aligned with the conversation and future speech playback.
+SocrAItes makes at most one model-requested visual state change per response, explains one idea, and waits before advancing the lesson. During narration, Maieutic can deterministically move its pointer among uniquely matched inline-code mentions inside the focused block. This uses the completed response and focused text without another model call and never moves the user's caret.
 
 The presentation uses standard VS Code theme colors and never selects or edits the document. Visual focus, text-to-speech, and speech-to-text remain independent capabilities.
 
-## OpenAI Voice Narration
+## Voice Conversation
 
-Maieutic contributes an independent `#speak` tool. When enabled, it sends only the narration supplied to that tool and your configured voice settings to OpenAI's `gpt-4o-mini-tts` model, plays the returned WAV locally, and deletes the temporary audio file. It does not automatically send files, editor content, chat history, tool output, or visual state.
+Open VS Code Chat and click the Maieutic microphone once. Maieutic then repeats this learner-gated loop:
 
-OpenAI API usage may incur charges. All playback is AI-generated. Your API key is stored in VS Code Secret Storage, not in settings or logs.
+1. Listen for one learner turn and stop after a short pause.
+2. Transcribe the recording locally.
+3. Submit the text to the current `@socraites` chat.
+4. Let SocrAItes make one applicable visual change and explain one concept.
+5. Speak that explanation while keeping echo-cancelled local listening active.
+6. Resume ordinary listening automatically when playback finishes, or stop immediately and submit the learner's interruption as the next turn.
 
-1. Run **Maieutic: Configure OpenAI TTS** and review the disclosure.
-2. Enter an OpenAI API key.
-3. Run **Maieutic: Preview OpenAI Voice**.
-4. Select **SocrAItes** and ask for an explanation. SocrAItes establishes any visual state first, then speaks the same explanation it returns as text.
-5. Click the Maieutic status-bar item or run **Maieutic: Stop Speaking** to cancel synthesis or playback.
+Every call uses SocrAItes regardless of the agent currently selected in Chat. The microphone becomes a stop control while the conversation is active. It keeps listening until you speak or stop it; click the control again to stop capture, transcription, narration, or the active SocrAItes response. Speaking while SocrAItes is talking interrupts playback, preserves the start of the learner's utterance, transcribes it locally, and continues the same call. Maieutic uses native voice-processing echo cancellation when the selected input and output route supports it, then safely retries with a conservative acoustic guard when macOS cannot combine those devices. The Chat session remains open and each SocrAItes response still ends at its teach-back or confirmation gate; voice mode does not let the agent batch later lesson steps.
 
-The default voice is `marin`. Configure `maieutic.tts.voice`, `maieutic.tts.instructions`, and `maieutic.tts.speed` in Settings. Starting new narration replaces active narration. Run **Maieutic: Clear OpenAI API Key** to remove the stored key and disable speech.
+Local recognition currently supports macOS. On first use, Maieutic asks before downloading the official Whisper `base.en` model, about 142 MB. The model is verified and stored in VS Code's private extension data. Each microphone recording is stored with private permissions and deleted immediately after local transcription. The recognized text is then submitted to the selected VS Code Chat model like a typed prompt.
 
-Local playback uses the operating system's WAV player:
+Maieutic does not install or depend on the VS Code Speech extension.
 
-- macOS: `afplay`
-- Windows: PowerShell `System.Media.SoundPlayer`
-- Linux: `aplay`
+## Voice Providers
 
-### Local Speech Input
+Narration defaults to a free voice installed on macOS and is processed entirely on the machine. Run **Maieutic: Select Voice Provider** to switch between:
 
-Maieutic includes Microsoft's [VS Code Speech](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-speech) as an extension-pack companion. A Marketplace installation installs it alongside Maieutic; a GitHub VSIX installation exposes the command below. VS Code Speech supplies the native Chat microphone and voice commands. Recordings are processed locally by VS Code Speech; Maieutic never requests microphone access or receives the audio.
+- **System voice**: free, local, and uses an installed macOS voice.
+- **Local neural service**: private neural speech through an OpenAI-compatible endpoint on this machine, such as LocalAI running Kokoro.
+- **OpenAI**: natural AI-generated speech through `gpt-4o-mini-tts`; API charges may apply.
 
-- After installing a GitHub VSIX, run **Maieutic: Install Local Speech Input** if the companion was not installed automatically.
-- Select the microphone in Chat or run **Chat: Start Voice Chat** to dictate a SocrAItes prompt.
-- Hold `Cmd+I` on macOS or `Ctrl+I` on Windows and Linux for walky-talky mode.
-- Configure recognition language with `accessibility.voice.speechLanguage`.
-- Leave `accessibility.voice.autoSynthesize` disabled while Maieutic OpenAI TTS is enabled to avoid hearing both narration systems.
+Run **Maieutic: Select Voice** to choose a voice for the active provider and **Maieutic: Preview Voice** to hear it. The system and local-service providers work without an OpenAI key. For OpenAI, run **Maieutic: Configure OpenAI TTS**, review the disclosure, and enter a key. The key is stored in VS Code Secret Storage and is never written to settings or logs.
 
-Speech-to-text, OpenAI narration, and visual focus remain independent. If VS Code Speech cannot be installed with an offline VSIX installation, install the companion later from the Marketplace; the rest of Maieutic continues to work.
+For local neural speech, install and start the service separately, then run **Maieutic: Configure Local Neural TTS**. Maieutic defaults to LocalAI's `http://127.0.0.1:8080/v1/audio/speech` endpoint, the `kokoro` model, and the `af_heart` voice. For example, LocalAI's model gallery can install Kokoro with:
+
+```sh
+local-ai models install kokoro
+```
+
+Maieutic accepts only loopback endpoints using `localhost`, `127.0.0.1`, or `::1`; it does not download, start, or manage the local model service. The configured model and voice are sent with each request, so another OpenAI-compatible local TTS implementation can be substituted without changing the extension.
+
+Use `maieutic.tts.speed` to adjust narration speed for any provider. The default is a measured `0.9`, with short teaching turns and natural phrase pauses. `maieutic.tts.instructions` controls delivery style only when OpenAI is selected.
+
+The selected neural provider receives only the final speech-ready narration and configured voice settings. Maieutic does not send files, editor content, chat history, discovery output, or visual state to a speech API. Returned audio is required to be WAV, capped at 64 MB, played locally, and deleted afterward. Run **Maieutic: Clear OpenAI API Key** to remove the cloud credential.
+
+The visual layer, local speech recognition, and narration remain independent capabilities. A typed SocrAItes session can use visuals with narration disabled. Setting `maieutic.tts.enabled` automatically narrates typed SocrAItes turns outside voice-conversation mode; voice-conversation mode always narrates its own responses with the selected provider.
+
+## Local Development
+
+Use a locally installed development VSIX for agent-prompt and packaged-behavior testing. This follows the same audit, Extension Host test, and packaging path as a release, then installs the result only on the local machine:
+
+```sh
+npm install
+npm run dev:install
+```
+
+After installation, run **Developer: Reload Window**, start a new Chat session, and run **Maieutic: Show Build Info**. Confirm the displayed version matches `package.json` before testing SocrAItes. No GitHub tag is created and nothing is published.
+
+Use the Extension Development Host when debugging TypeScript. It loads the current working tree without replacing the installed package and, after activation, marks itself with `Maieutic DEV <version>` in the status bar.
+
+1. Open this repository in VS Code.
+2. Press `F5` and choose **Run Maieutic against Cola**. The pre-launch task compiles the extension and opens `../cola` in an Extension Development Host.
+3. Run **Maieutic: Show Build Info** and confirm it reports **Development** mode.
+4. In a new Chat session, prompt: `@socraites Trace the primary agent-response lane, then lead me through it.`
+5. Confirm SocrAItes opens and focuses the first verified owner section, explains one concept, and waits for approval before advancing.
+6. After an edit, reload the development window and repeat the affected scenario.
+
+Before creating a version tag, work through `test/manual/socraites-acceptance.md` using the locally installed development VSIX. `npm run dev:install` already runs `npm run verify:release`; run the gate separately when no installation is needed. A version tag is the only trigger that publishes to the Marketplace.
 
 ## Try the Visual Layer
 
@@ -73,11 +112,11 @@ Speech-to-text, OpenAI narration, and visual focus remain independent. If VS Cod
 
 ## Try SocrAItes
 
-1. Open Chat and select **SocrAItes**.
+1. Open Chat and select **SocrAItes**, or type `@socraites` for the native guided participant.
 2. Type or dictate: `Teach me how resolvePointer works and how its validation protects the visual focus boundary.`
 3. Answer SocrAItes' question, then ask it to move to the next relevant detail.
 4. Confirm that it points and explains without editing files or running commands.
-5. With OpenAI TTS enabled, confirm each visual change completes before its matching narration begins.
+5. Start a SocrAItes call and confirm each visual change completes before its matching narration begins. Interrupt it while it speaks, then confirm playback stops and your interruption becomes the next SocrAItes turn.
 
 Only workspace-relative paths are accepted by the visual tools. In a multi-root workspace, prefix an ambiguous path with the workspace folder name.
 

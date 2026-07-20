@@ -9,6 +9,7 @@ interface Manifest {
   dependencies?: Record<string, string>;
   contributes?: {
     commands?: Array<{ command?: string }>;
+    menus?: Record<string, Array<{ command?: string; when?: string }>>;
     languageModelTools?: Array<{
       name?: string;
       when?: string;
@@ -19,13 +20,13 @@ interface Manifest {
     configuration?: {
       properties?: Record<
         string,
-        { default?: unknown; ignoreSync?: boolean; minimum?: number; maximum?: number }
+        { default?: unknown; enum?: unknown[]; ignoreSync?: boolean; minimum?: number; maximum?: number }
       >;
     };
   };
 }
 
-describe("OpenAI TTS manifest", () => {
+describe("voice manifest", () => {
   it("runs locally and contributes the complete opt-in surface", async () => {
     const manifest = JSON.parse(await readFile("package.json", "utf8")) as Manifest;
     const commands = manifest.contributes?.commands?.map(({ command }) => command);
@@ -34,20 +35,36 @@ describe("OpenAI TTS manifest", () => {
     assert.equal(manifest.publisher, "TenGallonTechnology");
     assert.deepEqual(manifest.dependencies, { openai: "6.48.0" });
     for (const command of [
-      "maieutic.installLocalSpeechInput",
+      "maieutic.startVoiceConversation",
+      "maieutic.stopVoiceConversation",
+      "maieutic.configureLocalTts",
       "maieutic.configureOpenAiTts",
       "maieutic.clearOpenAiApiKey",
-      "maieutic.previewOpenAiVoice",
+      "maieutic.selectVoiceProvider",
+      "maieutic.selectVoice",
+      "maieutic.previewVoice",
       "maieutic.stopSpeaking",
     ]) {
       assert.ok(commands?.includes(command), `${command} is not contributed`);
     }
   });
 
-  it("declares local speech input as an independent companion", async () => {
+  it("owns local speech input and contributes exactly one visible Chat control", async () => {
     const manifest = JSON.parse(await readFile("package.json", "utf8")) as Manifest;
 
-    assert.deepEqual(manifest.extensionPack, ["ms-vscode.vscode-speech"]);
+    assert.equal(manifest.extensionPack, undefined);
+    assert.deepEqual(manifest.contributes?.menus?.["chat/input/status"], [
+      {
+        command: "maieutic.startVoiceConversation",
+        when: "!maieutic.voiceConversationActive",
+        group: "navigation@1",
+      },
+      {
+        command: "maieutic.stopVoiceConversation",
+        when: "maieutic.voiceConversationActive",
+        group: "navigation@1",
+      },
+    ]);
   });
 
   it("keeps the speak tool disabled until setup and limits narration length", async () => {
@@ -65,8 +82,18 @@ describe("OpenAI TTS manifest", () => {
 
     assert.equal(properties?.["maieutic.tts.enabled"]?.default, false);
     assert.equal(properties?.["maieutic.tts.enabled"]?.ignoreSync, true);
+    assert.equal(properties?.["maieutic.tts.provider"]?.default, "system");
+    assert.deepEqual(properties?.["maieutic.tts.provider"]?.enum, ["system", "local", "openai"]);
+    assert.equal(properties?.["maieutic.tts.systemVoice"]?.default, "");
+    assert.equal(
+      properties?.["maieutic.tts.localEndpoint"]?.default,
+      "http://127.0.0.1:8080/v1/audio/speech",
+    );
+    assert.equal(properties?.["maieutic.tts.localEndpoint"]?.ignoreSync, true);
+    assert.equal(properties?.["maieutic.tts.localModel"]?.default, "kokoro");
+    assert.equal(properties?.["maieutic.tts.localVoice"]?.default, "af_heart");
     assert.equal(properties?.["maieutic.tts.voice"]?.default, "marin");
-    assert.equal(properties?.["maieutic.tts.speed"]?.default, 1);
+    assert.equal(properties?.["maieutic.tts.speed"]?.default, 0.9);
     assert.equal(properties?.["maieutic.tts.speed"]?.minimum, 0.25);
     assert.equal(properties?.["maieutic.tts.speed"]?.maximum, 4);
   });

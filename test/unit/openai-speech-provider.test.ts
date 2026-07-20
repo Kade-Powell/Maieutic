@@ -22,6 +22,7 @@ describe("toOpenAISpeechPayload", () => {
     assert.deepEqual(
       toOpenAISpeechPayload({
         text: "Explain this condition.",
+        provider: "openai",
         voice: "cedar",
         instructions: "Sound thoughtful.",
         speed: 0.9,
@@ -41,6 +42,7 @@ describe("toOpenAISpeechPayload", () => {
     assert.deepEqual(
       toOpenAISpeechPayload({
         text: "Explain this condition.",
+        provider: "openai",
         voice: "marin",
         speed: 1,
       }),

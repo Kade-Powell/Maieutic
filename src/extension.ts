@@ -1,32 +1,67 @@
 import * as vscode from "vscode";
 import { FocusController } from "./focus-controller.js";
 import type { FocusContentInput, PointAtContentInput } from "./model.js";
+import { registerSocrAItesParticipant } from "./socraites-participant.js";
 import {
   CLEAR_TTS_KEY_COMMAND,
+  CONFIGURE_LOCAL_TTS_COMMAND,
   CONFIGURE_TTS_COMMAND,
   PREVIEW_TTS_COMMAND,
+  SELECT_TTS_PROVIDER_COMMAND,
+  SELECT_TTS_VOICE_COMMAND,
   SPEAK_TOOL_NAME,
   SpeechController,
   STOP_SPEAKING_COMMAND,
 } from "./speech-controller.js";
 import type { SpeakInput } from "./speech-model.js";
+import {
+  START_VOICE_CONVERSATION_COMMAND,
+  STOP_VOICE_CONVERSATION_COMMAND,
+  VoiceConversationController,
+} from "./voice-conversation-controller.js";
 
-const INSTALL_LOCAL_SPEECH_COMMAND = "maieutic.installLocalSpeechInput";
-const LOCAL_SPEECH_EXTENSION_ID = "ms-vscode.vscode-speech";
+const SHOW_BUILD_INFO_COMMAND = "maieutic.showBuildInfo";
 const FOCUS_TOOL_NAME = "maieutic_focus_content";
 const POINT_TOOL_NAME = "maieutic_point_at_content";
 const CLEAR_TOOL_NAME = "maieutic_clear_focus_content";
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const controller = new FocusController();
   const speech = new SpeechController(context);
+  await speech.initialize();
+  const voiceConversation = new VoiceConversationController(context, speech);
+
+  if (context.extensionMode === vscode.ExtensionMode.Development) {
+    const status = vscode.window.createStatusBarItem(
+      "maieutic.development.status",
+      vscode.StatusBarAlignment.Left,
+      100,
+    );
+    status.text = `$(beaker) Maieutic DEV ${extensionVersion(context)}`;
+    status.tooltip = "Maieutic development build is active";
+    status.command = SHOW_BUILD_INFO_COMMAND;
+    status.show();
+    context.subscriptions.push(status);
+  }
 
   context.subscriptions.push(
     controller,
     speech,
-    registerCommand(INSTALL_LOCAL_SPEECH_COMMAND, () => installLocalSpeechInput()),
+    voiceConversation,
+    registerSocrAItesParticipant(
+      context,
+      controller,
+      speech,
+      () => voiceConversation.onParticipantTurnComplete(),
+    ),
+    registerCommand(START_VOICE_CONVERSATION_COMMAND, () => voiceConversation.start()),
+    registerCommand(STOP_VOICE_CONVERSATION_COMMAND, () => voiceConversation.stop()),
+    registerCommand(SHOW_BUILD_INFO_COMMAND, () => showBuildInfo(context)),
     registerCommand(CONFIGURE_TTS_COMMAND, () => speech.configure()),
+    registerCommand(CONFIGURE_LOCAL_TTS_COMMAND, () => speech.configureLocal()),
     registerCommand(CLEAR_TTS_KEY_COMMAND, () => speech.clearApiKey()),
+    registerCommand(SELECT_TTS_PROVIDER_COMMAND, () => speech.selectProvider()),
+    registerCommand(SELECT_TTS_VOICE_COMMAND, () => speech.selectVoice()),
     registerCommand(PREVIEW_TTS_COMMAND, () => speech.preview()),
     registerCommand(STOP_SPEAKING_COMMAND, () => speech.stop()),
     registerCommand("maieutic.focusAroundCursor", () => controller.focusAroundCursor()),
@@ -86,7 +121,7 @@ export function activate(context: vscode.ExtensionContext): void {
       },
       prepareInvocation() {
         return {
-          invocationMessage: "Generating and playing OpenAI speech",
+          invocationMessage: "Generating and playing speech",
         };
       },
     }),
@@ -94,6 +129,22 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {}
+
+async function showBuildInfo(context: vscode.ExtensionContext): Promise<void> {
+  const mode = context.extensionMode === vscode.ExtensionMode.Development
+    ? "Development"
+    : context.extensionMode === vscode.ExtensionMode.Test
+      ? "Test"
+      : "Production";
+  await vscode.window.showInformationMessage(
+    `Maieutic ${extensionVersion(context)} is running in ${mode} mode.`,
+  );
+}
+
+function extensionVersion(context: vscode.ExtensionContext): string {
+  const packageJson = context.extension.packageJSON as { version?: unknown };
+  return typeof packageJson.version === "string" ? packageJson.version : "unknown";
+}
 
 function registerCommand(command: string, callback: () => void | Thenable<void>): vscode.Disposable {
   return vscode.commands.registerCommand(command, async () => {
@@ -103,46 +154,6 @@ function registerCommand(command: string, callback: () => void | Thenable<void>)
       void vscode.window.showErrorMessage(toErrorMessage(error));
     }
   });
-}
-
-async function installLocalSpeechInput(): Promise<void> {
-  if (vscode.extensions.getExtension(LOCAL_SPEECH_EXTENSION_ID) !== undefined) {
-    await vscode.window.showInformationMessage(
-      "VS Code Speech is already installed. Use the microphone in Chat or run 'Chat: Start Voice Chat'.",
-    );
-    return;
-  }
-
-  const install = "Install";
-  const selection = await vscode.window.showInformationMessage(
-    "Install Microsoft's VS Code Speech extension for local speech-to-text?",
-    {
-      modal: true,
-      detail: [
-        "VS Code Speech owns microphone access and processes voice recordings locally on your machine.",
-        "It may download language support from the Visual Studio Marketplace.",
-        "Maieutic does not receive or store microphone audio.",
-      ].join("\n\n"),
-    },
-    install,
-  );
-  if (selection !== install) {
-    return;
-  }
-
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: "Installing VS Code Speech",
-    },
-    async () => vscode.commands.executeCommand(
-      "workbench.extensions.installExtension",
-      LOCAL_SPEECH_EXTENSION_ID,
-    ),
-  );
-  await vscode.window.showInformationMessage(
-    "VS Code Speech is installed. Use the microphone in Chat or run 'Chat: Start Voice Chat'.",
-  );
 }
 
 function toolResult(message: string): vscode.LanguageModelToolResult {

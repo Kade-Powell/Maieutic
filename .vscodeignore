@@ -7,7 +7,11 @@ node_modules/
 out/
 src/
 test/
+native/macos/
+scripts/
 **/*.map
+*.vsix
+media/*.svg
 eslint.config.mjs
 esbuild.mjs
 package-lock.json

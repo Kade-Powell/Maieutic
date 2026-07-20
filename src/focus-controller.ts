@@ -34,6 +34,7 @@ export class FocusController implements vscode.Disposable {
   });
 
   private activeFocus: ActiveFocus | undefined;
+  private focusRevision = 0;
   private readonly visibleEditorsSubscription: vscode.Disposable;
   private readonly documentChangeSubscription: vscode.Disposable;
 
@@ -62,6 +63,7 @@ export class FocusController implements vscode.Disposable {
 
     this.clearDecorations();
     this.activeFocus = { uri: document.uri, focus };
+    this.focusRevision += 1;
     this.applyToVisibleEditors();
     editor.revealRange(focus, vscode.TextEditorRevealType.InCenter);
 
@@ -101,6 +103,7 @@ export class FocusController implements vscode.Disposable {
 
     this.clearDecorations();
     this.activeFocus = { uri: editor.document.uri, focus };
+    this.focusRevision += 1;
     this.applyToVisibleEditors();
     editor.revealRange(focus, vscode.TextEditorRevealType.InCenter);
   }
@@ -126,6 +129,56 @@ export class FocusController implements vscode.Disposable {
     this.pointAtCursor();
   }
 
+  hasActiveFocus(): boolean {
+    return this.activeFocus !== undefined;
+  }
+
+  activeFocusSummary(): string | undefined {
+    const activeFocus = this.activeFocus;
+    if (activeFocus === undefined) {
+      return undefined;
+    }
+
+    const path = vscode.workspace.asRelativePath(activeFocus.uri, false);
+    const focus = `${path}:${formatRange(activeFocus.focus)}`;
+    return activeFocus.pointer === undefined
+      ? focus
+      : `${focus}; pointer ${formatRange(activeFocus.pointer)}`;
+  }
+
+  async activeFocusSnapshot(token: vscode.CancellationToken): Promise<ActiveFocusSnapshot | undefined> {
+    const activeFocus = this.activeFocus;
+    if (activeFocus === undefined) {
+      return undefined;
+    }
+    const revision = this.focusRevision;
+    throwIfCancelled(token);
+    const document = await vscode.workspace.openTextDocument(activeFocus.uri);
+    throwIfCancelled(token);
+    if (revision !== this.focusRevision || this.activeFocus?.uri.toString() !== activeFocus.uri.toString()) {
+      return undefined;
+    }
+    return {
+      revision,
+      focus: fromVsCodeRange(activeFocus.focus),
+      focusedText: document.getText(activeFocus.focus),
+    };
+  }
+
+  pointToResolvedRange(revision: number, pointer: TextRange): boolean {
+    const activeFocus = this.activeFocus;
+    if (activeFocus === undefined || revision !== this.focusRevision) {
+      return false;
+    }
+    const pointerRange = toVsCodeRange(pointer);
+    if (!activeFocus.focus.contains(pointerRange)) {
+      return false;
+    }
+    this.activeFocus = { ...activeFocus, pointer: pointerRange };
+    this.applyToVisibleEditors();
+    return true;
+  }
+
   clearPointer(): void {
     if (this.activeFocus === undefined) {
       return;
@@ -134,12 +187,14 @@ export class FocusController implements vscode.Disposable {
       uri: this.activeFocus.uri,
       focus: this.activeFocus.focus,
     };
+    this.focusRevision += 1;
     this.applyToVisibleEditors();
   }
 
   clear(): void {
     this.clearDecorations();
     this.activeFocus = undefined;
+    this.focusRevision += 1;
   }
 
   dispose(): void {
@@ -177,6 +232,12 @@ interface ActiveFocus {
   uri: vscode.Uri;
   focus: vscode.Range;
   pointer?: vscode.Range;
+}
+
+export interface ActiveFocusSnapshot {
+  revision: number;
+  focus: TextRange;
+  focusedText: string;
 }
 
 async function resolveWorkspaceFile(
