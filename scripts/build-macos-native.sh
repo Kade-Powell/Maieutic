@@ -27,18 +27,7 @@ lipo -create \
   "${WORK}/maieutic-recorder-x86_64" \
   -output "${OUTPUT}/maieutic-recorder"
 
-swiftc -target arm64-apple-macos12.0 \
-  "${ROOT}/native/macos/MaieuticCallAudio.swift" \
-  -o "${WORK}/maieutic-call-audio-arm64" \
-  -framework AVFoundation
-swiftc -target x86_64-apple-macos12.0 \
-  "${ROOT}/native/macos/MaieuticCallAudio.swift" \
-  -o "${WORK}/maieutic-call-audio-x86_64" \
-  -framework AVFoundation
-lipo -create \
-  "${WORK}/maieutic-call-audio-arm64" \
-  "${WORK}/maieutic-call-audio-x86_64" \
-  -output "${OUTPUT}/maieutic-call-audio"
+"${ROOT}/scripts/build-call-audio.sh"
 
 git clone --depth 1 --branch "${WHISPER_VERSION}" \
   https://github.com/ggml-org/whisper.cpp.git "${WORK}/whisper.cpp"
@@ -62,8 +51,7 @@ lipo -create \
   "${WORK}/whisper-x86_64/bin/whisper-cli" \
   -output "${OUTPUT}/whisper-cli"
 
-chmod 0755 "${OUTPUT}/maieutic-recorder" "${OUTPUT}/maieutic-call-audio" "${OUTPUT}/whisper-cli"
+chmod 0755 "${OUTPUT}/maieutic-recorder" "${OUTPUT}/whisper-cli"
 codesign --force --sign - "${OUTPUT}/maieutic-recorder"
-codesign --force --sign - "${OUTPUT}/maieutic-call-audio"
 codesign --force --sign - "${OUTPUT}/whisper-cli"
 cp "${WORK}/whisper.cpp/LICENSE" "${ROOT}/licenses/whisper.cpp-LICENSE"

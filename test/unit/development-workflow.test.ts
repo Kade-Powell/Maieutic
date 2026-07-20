@@ -9,6 +9,7 @@ describe("local development workflow", () => {
     };
     const script = manifest.scripts?.["dev:install"] ?? "";
 
+    assert.match(script, /npm run build:native:call/);
     assert.match(script, /npm run verify:release/);
     assert.match(script, /vsce package --out maieutic-dev\.vsix/);
     assert.match(script, /code --install-extension maieutic-dev\.vsix --force/);
@@ -42,5 +43,12 @@ describe("local development workflow", () => {
     assert.match(build, /rev-parse HEAD/);
     assert.match(build, /lipo -create/);
     assert.match(build, /GGML_NATIVE=OFF/);
+    assert.match(build, /build-call-audio\.sh/);
+
+    const callAudioBuild = await readFile("scripts/build-call-audio.sh", "utf8");
+    assert.match(callAudioBuild, /test-call-audio-detector\.sh/);
+    assert.match(callAudioBuild, /CallAudioSpeechDetector\.swift/);
+    assert.match(callAudioBuild, /arm64 x86_64/);
+    assert.match(callAudioBuild, /codesign --force --sign -/);
   });
 });

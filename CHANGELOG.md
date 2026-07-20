@@ -4,6 +4,10 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+## 0.0.7 - 2026-07-20
+
+- Prevented SocrAItes narration from interrupting itself by making native barge-in detection aware of the live playback echo envelope.
+
 ## 0.0.6 - 2026-07-20
 
 - Replaced the ambiguous Chat microphone with one stable SocrAItes call handset that toggles both start and stop.

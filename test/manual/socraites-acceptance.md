@@ -129,9 +129,9 @@ Expected: Maieutic ends capture after the pause, transcribes locally, submits on
 
 ### Learner barge-in
 
-Start a call through speakers, wait until SocrAItes is speaking, and interrupt with: `Hold on, explain that symbol again.`
+With built-in speakers and microphone selected, let one complete SocrAItes response play without speaking. Repeat with a mismatched input/output route that makes native voice processing retry with the acoustic guard. Then, while SocrAItes is speaking on each route, interrupt with: `Hold on, explain that symbol again.`
 
-Expected: native voice processing, or the conservative acoustic guard on an incompatible device route, prevents SocrAItes' own playback from creating a turn. Sustained learner speech stops audio and narration pointer motion immediately, preserves the beginning of the interruption, ends capture after a natural pause, transcribes locally, and submits exactly one new `@socraites` turn. Ordinary listening resumes after that response unless the call is ended.
+Expected: both silent-learner responses finish without creating an interruption or transcript. Native voice processing, or the playback-aware acoustic guard on an incompatible device route, rejects SocrAItes' own output. Sustained learner speech still stops audio and narration pointer motion, preserves the beginning of the interruption, ends capture after a natural pause, transcribes locally, and submits exactly one new `@socraites` turn. Ordinary listening resumes after that response unless the call is ended.
 
 ### Learner-gated continuation
 

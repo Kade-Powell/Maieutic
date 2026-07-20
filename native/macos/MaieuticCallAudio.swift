@@ -25,14 +25,21 @@ private final class CallAudioSession: @unchecked Sendable {
     private var captureFile: AVAudioFile?
     private var playbackFile: AVAudioFile?
     private var monitor: DispatchSourceTimer?
-    private var startedAt = Date()
-    private var playbackFinishedAt: Date?
-    private var lastSpeechAt: Date?
-    private var candidateSpeechDuration = 0.0
+    private var startedAt = ProcessInfo.processInfo.systemUptime
+    private var playbackFinishedAt: TimeInterval?
+    private var lastSpeechAt: TimeInterval?
+    private var speechDetector: CallAudioSpeechDetector?
+    private var playbackLevels = Array(
+        repeating: (time: TimeInterval(0), decibels: Float(-120)),
+        count: 64
+    )
+    private var playbackLevelIndex = 0
+    private var playbackLevelCount = 0
     private var preRoll: [AVAudioPCMBuffer] = []
     private var preRollFrames = 0
     private var interruptionEmitted = false
     private var tapInstalled = false
+    private var playbackTapInstalled = false
     private var speechThreshold: Float = -40
     private var stopping = false
 
@@ -68,7 +75,6 @@ private final class CallAudioSession: @unchecked Sendable {
     }
 
     private func finishStart(mode: String) {
-        startedAt = Date()
         startMonitor()
         emit("started", message: mode)
     }
@@ -97,12 +103,26 @@ private final class CallAudioSession: @unchecked Sendable {
         speechThreshold = voiceProcessing ? -40 : -32
 
         audioEngine.attach(playerNode)
-        audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: nil)
+        let mixer = audioEngine.mainMixerNode
+        audioEngine.connect(playerNode, to: mixer, format: nil)
+        mixer.installTap(
+            onBus: 0,
+            bufferSize: 1_024,
+            format: mixer.outputFormat(forBus: 0)
+        ) { [weak self] buffer, _ in
+            self?.consumePlayback(buffer)
+        }
+        playbackTapInstalled = true
         input.installTap(onBus: 0, bufferSize: 1_024, format: nil) { [weak self] buffer, _ in
             self?.consume(buffer)
         }
         tapInstalled = true
 
+        startedAt = ProcessInfo.processInfo.systemUptime
+        speechDetector = CallAudioSpeechDetector(
+            voiceProcessing: voiceProcessing,
+            startedAt: startedAt
+        )
         audioEngine.prepare()
         try audioEngine.start()
         playerNode.scheduleFile(playback, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
@@ -111,8 +131,23 @@ private final class CallAudioSession: @unchecked Sendable {
         playerNode.play()
     }
 
+    private func consumePlayback(_ buffer: AVAudioPCMBuffer) {
+        guard let decibels = bufferDecibels(buffer) else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        lock.lock()
+        guard !stopping else {
+            lock.unlock()
+            return
+        }
+        playbackLevels[playbackLevelIndex] = (time: now, decibels: decibels)
+        playbackLevelIndex = (playbackLevelIndex + 1) % playbackLevels.count
+        playbackLevelCount = min(playbackLevelCount + 1, playbackLevels.count)
+        lock.unlock()
+    }
+
     private func consume(_ buffer: AVAudioPCMBuffer) {
         var shouldInterrupt = false
+        let now = ProcessInfo.processInfo.systemUptime
         lock.lock()
         guard !stopping, let captureFile else {
             lock.unlock()
@@ -120,6 +155,13 @@ private final class CallAudioSession: @unchecked Sendable {
         }
 
         let speechWasDetected = lastSpeechAt != nil
+        var playbackDecibels: Float?
+        for index in 0..<playbackLevelCount {
+            let level = playbackLevels[index]
+            if level.time >= now - 0.45 {
+                playbackDecibels = max(playbackDecibels ?? level.decibels, level.decibels)
+            }
+        }
         if !speechWasDetected {
             retainPreRoll(buffer)
         }
@@ -137,16 +179,19 @@ private final class CallAudioSession: @unchecked Sendable {
                 }
                 let rms = sqrt(squareSum / Float(end - offset))
                 let decibels = 20 * log10(max(rms, 0.000_001))
-                if decibels > speechThreshold {
-                    if lastSpeechAt == nil {
-                        candidateSpeechDuration += Double(end - offset) / buffer.format.sampleRate
+                let duration = Double(end - offset) / buffer.format.sampleRate
+                if lastSpeechAt == nil {
+                    if speechDetector?.observe(
+                        microphoneDecibels: decibels,
+                        playbackDecibels: playbackDecibels,
+                        duration: duration,
+                        now: now
+                    ) == true {
+                        shouldInterrupt = true
+                        lastSpeechAt = now
                     }
-                    if candidateSpeechDuration >= 0.18 || lastSpeechAt != nil {
-                        if lastSpeechAt == nil { shouldInterrupt = true }
-                        lastSpeechAt = Date()
-                    }
-                } else if lastSpeechAt == nil {
-                    candidateSpeechDuration = 0
+                } else if decibels > speechThreshold {
+                    lastSpeechAt = now
                 }
                 offset = end
             }
@@ -183,7 +228,7 @@ private final class CallAudioSession: @unchecked Sendable {
         preRoll.append(copy)
         preRollFrames += Int(copy.frameLength)
 
-        let frameLimit = Int(buffer.format.sampleRate * 0.6)
+        let frameLimit = Int(buffer.format.sampleRate * 0.45)
         while preRollFrames > frameLimit, preRoll.count > 1 {
             preRollFrames -= Int(preRoll.removeFirst().frameLength)
         }
@@ -204,7 +249,9 @@ private final class CallAudioSession: @unchecked Sendable {
 
     private func playbackDidFinish() {
         lock.lock()
-        if playbackFinishedAt == nil { playbackFinishedAt = Date() }
+        if playbackFinishedAt == nil {
+            playbackFinishedAt = ProcessInfo.processInfo.systemUptime
+        }
         lock.unlock()
     }
 
@@ -225,16 +272,16 @@ private final class CallAudioSession: @unchecked Sendable {
         lock.unlock()
         guard !isStopping else { return }
 
-        let now = Date()
-        if let lastSpeechAt, now.timeIntervalSince(lastSpeechAt) >= 1.1 {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let lastSpeechAt, now - lastSpeechAt >= 1.1 {
             stop(event: "recorded")
         } else if let playbackFinishedAt,
                   lastSpeechAt == nil,
-                  now.timeIntervalSince(playbackFinishedAt) >= 0.35 {
+                  now - playbackFinishedAt >= 0.35 {
             stop(event: "played")
-        } else if lastSpeechAt != nil, now.timeIntervalSince(startedAt) >= 60 {
+        } else if lastSpeechAt != nil, now - startedAt >= 60 {
             stop(event: "recorded")
-        } else if now.timeIntervalSince(startedAt) >= 120 {
+        } else if now - startedAt >= 120 {
             stop(event: "error", message: "Call audio exceeded its safety limit.")
         }
     }
@@ -255,9 +302,16 @@ private final class CallAudioSession: @unchecked Sendable {
             audioEngine.inputNode.removeTap(onBus: 0)
             tapInstalled = false
         }
+        if playbackTapInstalled {
+            audioEngine.mainMixerNode.removeTap(onBus: 0)
+            playbackTapInstalled = false
+        }
         lock.lock()
         captureFile = nil
         playbackFile = nil
+        speechDetector = nil
+        playbackLevelIndex = 0
+        playbackLevelCount = 0
         preRoll.removeAll(keepingCapacity: false)
         preRollFrames = 0
         lock.unlock()
@@ -265,6 +319,31 @@ private final class CallAudioSession: @unchecked Sendable {
         emit(event, message: message)
         exit(event == "error" ? EXIT_FAILURE : EXIT_SUCCESS)
     }
+}
+
+private func bufferDecibels(_ buffer: AVAudioPCMBuffer) -> Float? {
+    guard let channels = buffer.floatChannelData, buffer.frameLength > 0 else {
+        return nil
+    }
+    let channelCount = Int(buffer.format.channelCount)
+    guard channelCount > 0 else { return nil }
+
+    let interleaved = buffer.format.isInterleaved
+    let bufferCount = interleaved ? 1 : channelCount
+    let samplesPerBuffer = Int(buffer.frameLength) * (interleaved ? channelCount : 1)
+    var squareSum = 0.0
+    var sampleCount = 0
+    for channel in 0..<bufferCount {
+        let samples = channels[channel]
+        for index in 0..<samplesPerBuffer {
+            let sample = Double(samples[index])
+            squareSum += sample * sample
+        }
+        sampleCount += samplesPerBuffer
+    }
+    guard sampleCount > 0 else { return nil }
+    let rms = sqrt(squareSum / Double(sampleCount))
+    return Float(20 * log10(max(rms, 0.000_001)))
 }
 
 private func requestMicrophonePermission(_ completion: @escaping (Bool) -> Void) {
@@ -280,19 +359,22 @@ private func requestMicrophonePermission(_ completion: @escaping (Bool) -> Void)
 
 private var retainedSession: CallAudioSession?
 
-guard !playbackPath.isEmpty, !capturePath.isEmpty else {
-    emit("error", message: "Private playback and capture paths are required.")
-    exit(EXIT_FAILURE)
-}
-
-requestMicrophonePermission { allowed in
-    guard allowed else {
-        emit("error", message: "Microphone permission was denied. Enable Visual Studio Code in System Settings > Privacy & Security > Microphone.")
-        exit(EXIT_FAILURE)
+@main
+private enum MaieuticCallAudioApplication {
+    static func main() {
+        guard !playbackPath.isEmpty, !capturePath.isEmpty else {
+            emit("error", message: "Private playback and capture paths are required.")
+            exit(EXIT_FAILURE)
+        }
+        requestMicrophonePermission { allowed in
+            guard allowed else {
+                emit("error", message: "Microphone permission was denied. Enable Visual Studio Code in System Settings > Privacy & Security > Microphone.")
+                exit(EXIT_FAILURE)
+            }
+            let session = CallAudioSession()
+            retainedSession = session
+            session.start()
+        }
+        RunLoop.main.run()
     }
-    let session = CallAudioSession()
-    retainedSession = session
-    session.start()
 }
-
-RunLoop.main.run()
