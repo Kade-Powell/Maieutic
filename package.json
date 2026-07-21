@@ -1,9 +1,9 @@
 {
   "name": "maieutic",
   "displayName": "Maieutic",
-  "description": "Read-only Socratic codebase teaching with visual focus and a natural local or OpenAI voice conversation.",
+  "description": "Lead-engineer codebase teaching, bounded AI-assisted coding, visual focus, and natural voice conversation.",
   "icon": "media/icon.png",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "TenGallonTechnology",
   "license": "MIT",
   "private": true,
@@ -58,6 +58,9 @@
     "chatAgents": [
       {
         "path": "./agents/socraites.agent.md"
+      },
+      {
+        "path": "./agents/socraites-pair.agent.md"
       },
       {
         "path": "./agents/socraites-discovery.agent.md"

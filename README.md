@@ -4,24 +4,44 @@
   <img src="media/icon.png" alt="Maieutic logo" width="128">
 </p>
 
-Maieutic is a read-only Socratic teaching extension for VS Code. It bundles **SocrAItes**, visual tools that guide attention without making changes, and one-button voice conversations with local speech recognition and configurable narration.
+Maieutic brings lead-engineer pairing to VS Code. It bundles **SocrAItes** for hands-on codebase teaching, **SocrAItes Pair** for bounded AI-assisted coding, visual tools that guide attention, and one-button voice conversations with local speech recognition and configurable narration.
 
 ## SocrAItes
 
-Choose **SocrAItes** from the Chat agent picker for ordinary typed conversations, or type `@socraites` to use Maieutic's native guided participant. Both are bundled with the extension. The native participant stays selected for the rest of that chat and:
+Choose **SocrAItes** from the Chat agent picker for ordinary typed conversations, or type `@socraites` to use Maieutic's native guided participant. Both are bundled with the extension, and the native participant stays selected for the rest of that chat. Across both surfaces, SocrAItes:
 
 - can read and search the workspace, inspect problems, ask questions, and consult primary documentation;
-- cannot edit files, run commands or tests, or create tasks;
+- cannot edit files, run commands or tests, or create tasks by default;
 - uses Socratic questions and a progressive hint ladder without withholding basic facts;
 - distills repository documentation into mental models, invariants, boundaries, tradeoffs, and verification evidence;
 - points to verified code and documentation instead of generating paste-ready implementations; and
-- treats workspace `AGENTS.md` and local teaching guidance as domain context without relaxing its read-only boundary.
+- treats workspace `AGENTS.md` and local teaching guidance as domain context without broadening its capability boundary.
+
+SocrAItes behaves like a lead engineer at the learner's keyboard: it shows what to inspect, names the local pattern and invariant, gives one concrete hand-written move, and reviews the learner's attempt before advancing.
+
+The selectable **SocrAItes** custom profile does not enable the built-in edit tool by default. When a learner explicitly asks for scaffolding, manually enables editing for that session, and approves SocrAItes' exact file plan, it may create minimal module, manifest, signature, registration, placeholder, or test-shell structure. It never writes business logic, runs commands, installs dependencies, tests, formats, commits, overwrites implementations, or expands beyond the approved plan. The native `@socraites` participant and voice conversation remain read-only.
 
 For broad multi-file discovery, SocrAItes can delegate one bounded investigation to a read-only search worker. The worker can search and report evidence but cannot edit, execute, interact with the learner, or control Maieutic's visual tools.
 
 SocrAItes owns the complete teaching turn. It gathers read-only evidence, requires one successful focus or pointer change when editor content applies, produces one short teaching step, optionally speaks that same step, and then stops for the learner. Prompt wording alone does not control that order.
 
 Reasoning uses the model selected in VS Code Chat. Maieutic does not add a second coding-agent provider or use ACP.
+
+## SocrAItes Pair
+
+Choose **SocrAItes Pair** when you explicitly want AI assistance with bounded coding work. It enables file editing but leaves command execution disabled, so the engineer still runs tests, formatters, generators, migrations, and application commands.
+
+Pair can help with:
+
+- boilerplate, scaffolding, setup code, repetitive structure, and transport-only route-handler shells around engineer-defined contracts;
+- tests after the engineer has written the business logic and stated the expected behavior;
+- first-pass code review, followed by required human review;
+- refactoring ideas and explicitly approved behavior-preserving mechanical refactors;
+- documentation drafts from verified or engineer-provided facts;
+- debugging after the engineer shares a timeboxed first attempt, theory, and evidence;
+- design alternatives, onboarding explanations, synthetic examples, mocks, fixtures, and planning artifacts.
+
+Pair never writes core business logic, designs domain types or API contracts, decides behavior, substitutes for codebase knowledge, begins debugging with a guessed fix, authors final technical communication, or presents generated work as understood or reviewed. Before editing, it identifies the acceptable-use category, grounds the work in local evidence, names the exact file plan and verification, and waits unless the engineer explicitly says `do it now` or `skip plan`.
 
 ## Visual Tools
 
@@ -115,8 +135,17 @@ Before creating a version tag, work through `test/manual/socraites-acceptance.md
 1. Open Chat and select **SocrAItes**, or type `@socraites` for the native guided participant.
 2. Type or dictate: `Teach me how resolvePointer works and how its validation protects the visual focus boundary.`
 3. Answer SocrAItes' question, then ask it to move to the next relevant detail.
-4. Confirm that it points and explains without editing files or running commands.
+4. Confirm that it points and explains without editing files or running commands by default.
 5. Start a SocrAItes call and confirm each visual change completes before its matching narration begins. Interrupt it while it speaks, then confirm playback stops and your interruption becomes the next SocrAItes turn.
+6. In a typed custom-profile session, request a scaffold while edit remains disabled; confirm SocrAItes does not edit. Enable edit for that session, approve its exact file plan, and confirm it creates structure only without business logic or execution.
+
+## Try SocrAItes Pair
+
+1. Select **SocrAItes Pair** and confirm edit is enabled while execute remains disabled.
+2. Ask it to write business logic for an unresolved product rule; confirm it returns the decision and implementation to you.
+3. Ask it to scaffold a transport-only route handler around an existing contract; confirm it identifies the allowed category and exact file plan before editing.
+4. After writing business logic by hand and stating its expected cases, ask Pair to add focused tests. Review the generated tests, then run them yourself.
+5. Ask Pair to debug a failure without describing your own attempt; confirm it leads your first investigation instead of guessing a fix.
 
 Only workspace-relative paths are accepted by the visual tools. In a multi-root workspace, prefix an ambiguous path with the workspace folder name.
 

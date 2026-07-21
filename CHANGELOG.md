@@ -4,6 +4,13 @@ All notable changes to Maieutic are documented here.
 
 ## Unreleased
 
+## 0.0.8 - 2026-07-21
+
+- Reframed SocrAItes as a lead engineer that visually guides one hands-on codebase step at a time and keeps behavioral work with the learner.
+- Added an opt-in scaffolding exception to SocrAItes with explicit file-plan approval and a strict prohibition on business logic or command execution.
+- Added the selectable SocrAItes Pair profile for bounded AI-assisted boilerplate, tests from engineer-defined behavior, first-pass review, mechanical refactoring, verified documentation, timeboxed debugging, examples, mocks, and planning.
+- Kept command execution and autonomous business decisions out of SocrAItes Pair, with profile tests and manual acceptance coverage for the engineer-ownership boundary.
+
 ## 0.0.7 - 2026-07-20
 
 - Prevented SocrAItes narration from interrupting itself by making native barge-in detection aware of the live playback echo envelope.

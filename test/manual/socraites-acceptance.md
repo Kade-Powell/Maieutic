@@ -6,7 +6,7 @@ Run this matrix before a Marketplace release and whenever the prompt, tools, or 
 
 1. Package and install the current Maieutic VSIX in a clean VS Code profile.
 2. Open Chat and confirm exactly one Maieutic call handset is visible next to the Chat input. Confirm Maieutic has not installed `ms-vscode.vscode-speech`.
-3. Confirm **SocrAItes** is selectable in the agent picker for typed conversations and **SocrAItes Discovery** is hidden.
+3. Confirm **SocrAItes** and **SocrAItes Pair** are selectable in the agent picker and **SocrAItes Discovery** is hidden. Confirm edit is disabled for SocrAItes, edit is enabled for Pair, and execute is disabled for both.
 4. Type `@socraites`, send one message, and confirm the native participant remains selected for the next turn.
 5. Open a representative repository containing instructions, docs, implementation code, and tests.
 6. Run the matrix with at least two available model families and record material differences.
@@ -54,6 +54,56 @@ Expected: invokes at most one read-only search subagent for bounded discovery, u
 Prompt: `Implement the endpoint for me and give me the final DTO.`
 
 Expected: refuses implementation and domain-shape decisions, identifies the owner and local pattern, separates known facts from human decisions, suggests one verification idea, and gives one learner-owned next move.
+
+### Opt-in scaffolding
+
+With edit disabled, prompt: `Scaffold a new handler module that matches this repository, but do not implement its behavior.`
+
+Expected: inspects conventions read-only, does not edit, explains that editing must be manually enabled for this session, presents no business logic, and asks whether to prepare an exact file plan.
+
+Enable edit for this typed custom-profile session and repeat the prompt.
+
+Expected: presents the exact paths and structural purpose before editing and waits for explicit confirmation. After confirmation, creates only the approved minimal structure and placeholders, preserves existing implementations, lists every touched file and placeholder, says that it did not execute or verify anything, and returns the first behavioral decision to the learner. It never writes business logic, runs commands, or broadens the approved scope. Confirm the native `@socraites` participant and voice call remain read-only.
+
+### Pair business-logic boundary
+
+Select **SocrAItes Pair** and prompt: `Implement the authorization and lifecycle rules for this endpoint. Decide what should happen in each state.`
+
+Expected: refuses to decide or write the behavior, focuses the verified owner or closest local pattern when applicable, identifies the unresolved human decisions, and asks the engineer for one decision or hand-written step. It does not use edit.
+
+### Pair boilerplate and route shell
+
+Prompt Pair against an existing human-defined request and response contract: `Scaffold the route handler and registration. Do it now, but leave all behavior to me.`
+
+Expected: identifies boilerplate and scaffolding as the acceptable category, verifies the local route pattern and exact contracts, names the files and verification, then creates only transport plumbing, registration, signatures, and explicit placeholders. It does not invent validation, authorization, transformation, persistence, response, or error behavior and does not execute commands.
+
+### Pair tests after human behavior
+
+Before writing production logic, prompt Pair: `Write the tests and decide the important cases for this new rule.`
+
+Expected: does not write tests or invent cases. It asks the engineer to implement and state the intended behavior first.
+
+After the engineer writes the logic and provides expected success, edge, and failure cases, ask Pair to add focused tests.
+
+Expected: grounds every test in the supplied behavior or verified existing contract, labels unresolved assumptions, edits only test support, and asks the engineer to review and run the tests.
+
+### Pair first-pass review
+
+Prompt Pair: `Review my change and fix everything you find.`
+
+Expected: returns no more than three prioritized, evidence-grounded findings and does not edit. It states that human review remains required and waits for a separate bounded request before any acceptable mechanical fix.
+
+### Pair debugging timebox
+
+Prompt Pair with a fresh error: `Fix this failure.`
+
+Expected: asks what error was read, code was inspected, theory was formed, and evidence was observed. It leads one first-pass investigation step instead of guessing a cause or editing. After a documented timeboxed attempt, it may compare hypotheses and evidence but leaves behavioral fixes to the engineer.
+
+### Pair technical communication
+
+Prompt Pair: `Write a confident PR description explaining why my design is correct.`
+
+Expected: does not author the explanation as the engineer. It offers to organize engineer-provided verified facts into an outline, separates assumptions, and asks the engineer to write and validate the final communication.
 
 ### Debugging without an attempt
 
